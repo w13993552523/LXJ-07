@@ -5365,7 +5365,7 @@ window.PAGES = [
     ],
     "filters": [
       {
-        "name": "溯源报告编码",
+        "name": "菜品溯源报告编码",
         "type": "input",
         "default": "/",
         "match": "精准查询"
@@ -5419,44 +5419,14 @@ window.PAGES = [
         "match": "精准查询"
       },
       {
-        "name": "生产日期时间段",
+        "name": "报告生成时间段",
         "type": "时间段",
-        "match": "精准查询"
-      },
-      {
-        "name": "车牌号",
-        "type": "input",
-        "match": "精准查询"
-      },
-      {
-        "name": "收货任务编码",
-        "type": "input",
-        "match": "精准查询"
-      },
-      {
-        "name": "仓库编码",
-        "type": "input",
-        "match": "精准查询"
-      },
-      {
-        "name": "供应商编码",
-        "type": "input",
-        "match": "精准查询"
-      },
-      {
-        "name": "模板编码",
-        "type": "input",
         "match": "精准查询"
       }
     ],
     "columns": [
       {
-        "name": "溯源报告编码",
-        "description": "",
-        "note": ""
-      },
-      {
-        "name": "菜品名称",
+        "name": "菜品溯源报告编码",
         "description": "",
         "note": ""
       },
@@ -5466,9 +5436,17 @@ window.PAGES = [
         "note": ""
       },
       {
+        "name": "菜品名称",
+        "description": "",
+        "note": ""
+      },
+      {
         "name": "菜品类型",
         "description": "",
         "note": ""
+      },
+      {
+        "name": "门店菜品名称"
       },
       {
         "name": "门店编码",
@@ -5491,47 +5469,17 @@ window.PAGES = [
         "note": "可能多个，逗号隔开"
       },
       {
-        "name": "原料编码",
-        "description": "",
-        "note": ""
-      },
-      {
-        "name": "原料名称",
-        "description": "",
-        "note": ""
-      },
-      {
-        "name": "关联菜品",
-        "description": "#菜品名称-#菜品编码",
-        "note": "可能多个，逗号隔开"
-      },
-      {
         "name": "报告生成时间",
         "description": "yyyy-mm-dd hh:mm:ss",
         "note": ""
       },
       {
-        "name": "关联原料溯源报告",
+        "name": "关联原料溯源报告编码",
         "description": "",
         "note": "可能多个，逗号隔开"
       },
       {
-        "name": "菜品模板编码"
-      },
-      {
-        "name": "原料模板编码"
-      },
-      {
-        "name": "供应商模板编码"
-      },
-      {
-        "name": "供应商名称"
-      },
-      {
-        "name": "生产日期"
-      },
-      {
-        "name": "模板版本号"
+        "name": "操作"
       }
     ],
     "tabs": [
@@ -8029,7 +7977,92 @@ window.PAGES = [
       "查看"
     ],
     "detailMode": "page",
-    "reportSchemaVersion": "chain-20261013-be58622782e2"
+    "reportSchemaVersion": "chain-20261013-be58622782e2",
+    "reportDetailColumns": [
+      {
+        "name": "溯源报告编码",
+        "description": "",
+        "note": ""
+      },
+      {
+        "name": "菜品名称",
+        "description": "",
+        "note": ""
+      },
+      {
+        "name": "菜品编码",
+        "description": "",
+        "note": ""
+      },
+      {
+        "name": "菜品类型",
+        "description": "",
+        "note": ""
+      },
+      {
+        "name": "门店编码",
+        "description": "",
+        "note": ""
+      },
+      {
+        "name": "门店名称",
+        "description": "",
+        "note": ""
+      },
+      {
+        "name": "关联原料数量",
+        "description": "",
+        "note": ""
+      },
+      {
+        "name": "关联原料",
+        "description": "#原料名称-#原料编码",
+        "note": "可能多个，逗号隔开"
+      },
+      {
+        "name": "原料编码",
+        "description": "",
+        "note": ""
+      },
+      {
+        "name": "原料名称",
+        "description": "",
+        "note": ""
+      },
+      {
+        "name": "关联菜品",
+        "description": "#菜品名称-#菜品编码",
+        "note": "可能多个，逗号隔开"
+      },
+      {
+        "name": "报告生成时间",
+        "description": "yyyy-mm-dd hh:mm:ss",
+        "note": ""
+      },
+      {
+        "name": "关联原料溯源报告",
+        "description": "",
+        "note": "可能多个，逗号隔开"
+      },
+      {
+        "name": "菜品模板编码"
+      },
+      {
+        "name": "原料模板编码"
+      },
+      {
+        "name": "供应商模板编码"
+      },
+      {
+        "name": "供应商名称"
+      },
+      {
+        "name": "生产日期"
+      },
+      {
+        "name": "模板版本号"
+      }
+    ]
   },
   {
     "id": "public-report",
@@ -8083,25 +8116,13 @@ window.PAGES = [
         "match": "模糊查询"
       },
       {
-        "name": "消费者模板编码",
-        "type": "",
-        "default": "",
-        "match": ""
-      },
-      {
-        "name": "消费者模板版本",
-        "type": "",
-        "default": "",
-        "match": ""
-      },
-      {
-        "name": "关联原料溯源报告编码",
+        "name": "关联原料报告编码",
         "type": "input",
         "default": "/",
         "match": "精准查询"
       },
       {
-        "name": "关联菜品溯源报告编码",
+        "name": "关联菜品报告编码",
         "type": "",
         "default": "",
         "match": ""
@@ -8136,16 +8157,24 @@ window.PAGES = [
         "name": "供应商名称",
         "type": "input",
         "match": "模糊查询"
-      },
-      {
-        "name": "门店收货时间",
-        "type": "时间段",
-        "match": "精准查询"
       }
     ],
     "columns": [
       {
+        "name": "序号"
+      },
+      {
         "name": "消费者溯源报告编码",
+        "description": "",
+        "note": ""
+      },
+      {
+        "name": "关联菜品报告编码",
+        "description": "#菜品名称-#菜品编码",
+        "note": "可能多个，逗号隔开"
+      },
+      {
+        "name": "菜品编码",
         "description": "",
         "note": ""
       },
@@ -8158,12 +8187,24 @@ window.PAGES = [
         "name": "报告状态"
       },
       {
-        "name": "菜品编码",
+        "name": "菜品类型",
         "description": "",
         "note": ""
       },
       {
-        "name": "菜品类型",
+        "name": "原料名称"
+      },
+      {
+        "name": "原料编码"
+      },
+      {
+        "name": "供应商名称"
+      },
+      {
+        "name": "供应商编码"
+      },
+      {
+        "name": "门店名称",
         "description": "",
         "note": ""
       },
@@ -8173,14 +8214,12 @@ window.PAGES = [
         "note": ""
       },
       {
-        "name": "门店名称",
+        "name": "关联原料数量",
         "description": "",
         "note": ""
       },
       {
-        "name": "关联原料数量",
-        "description": "",
-        "note": ""
+        "name": "关联原料报告编码"
       },
       {
         "name": "消费者模板编码",
@@ -8193,9 +8232,8 @@ window.PAGES = [
         "note": ""
       },
       {
-        "name": "关联菜品溯源报告编码",
-        "description": "#菜品名称-#菜品编码",
-        "note": "可能多个，逗号隔开"
+        "name": "报告完整率",
+        "description": "源报告完整率，原型展示示例值"
       },
       {
         "name": "创建时间",
@@ -8203,28 +8241,19 @@ window.PAGES = [
         "note": ""
       },
       {
-        "name": "更新时间",
-        "description": "yyyy-mm-dd hh:mm:ss",
+        "name": "最近更新人",
+        "description": "usename",
         "note": ""
       },
       {
-        "name": "更新人",
-        "description": "usename",
+        "name": "最近更新时间",
+        "description": "yyyy-mm-dd hh:mm:ss",
         "note": ""
       },
       {
         "name": "操作",
         "description": "详情/重新生成/二维码",
         "note": "二维码操作根据小程序开发方式待定"
-      },
-      {
-        "name": "原料编码"
-      },
-      {
-        "name": "生产日期"
-      },
-      {
-        "name": "供应商名称"
       }
     ],
     "tabs": [
@@ -8495,7 +8524,91 @@ window.PAGES = [
       "二维码",
       "关闭溯源报告"
     ],
-    "detailMode": "page"
+    "detailMode": "page",
+    "reportDetailColumns": [
+      {
+        "name": "消费者溯源报告编码",
+        "description": "",
+        "note": ""
+      },
+      {
+        "name": "菜品名称",
+        "description": "",
+        "note": ""
+      },
+      {
+        "name": "报告状态"
+      },
+      {
+        "name": "菜品编码",
+        "description": "",
+        "note": ""
+      },
+      {
+        "name": "菜品类型",
+        "description": "",
+        "note": ""
+      },
+      {
+        "name": "门店编码",
+        "description": "",
+        "note": ""
+      },
+      {
+        "name": "门店名称",
+        "description": "",
+        "note": ""
+      },
+      {
+        "name": "关联原料数量",
+        "description": "",
+        "note": ""
+      },
+      {
+        "name": "消费者模板编码",
+        "description": "",
+        "note": ""
+      },
+      {
+        "name": "消费者模板版本",
+        "description": "",
+        "note": ""
+      },
+      {
+        "name": "关联菜品溯源报告编码",
+        "description": "#菜品名称-#菜品编码",
+        "note": "可能多个，逗号隔开"
+      },
+      {
+        "name": "创建时间",
+        "description": "yyyy-mm-dd hh:mm:ss",
+        "note": ""
+      },
+      {
+        "name": "更新时间",
+        "description": "yyyy-mm-dd hh:mm:ss",
+        "note": ""
+      },
+      {
+        "name": "更新人",
+        "description": "usename",
+        "note": ""
+      },
+      {
+        "name": "操作",
+        "description": "详情/重新生成/二维码",
+        "note": "二维码操作根据小程序开发方式待定"
+      },
+      {
+        "name": "原料编码"
+      },
+      {
+        "name": "生产日期"
+      },
+      {
+        "name": "供应商名称"
+      }
+    ]
   },
   {
     "id": "complaint",
@@ -9532,12 +9645,6 @@ window.PAGES = [
         "match": "精准查询"
       },
       {
-        "name": "菜品模板配置状态",
-        "type": "单级下拉筛选",
-        "default": "全部",
-        "match": "精准查询"
-      },
-      {
         "name": "原料模板配置状态",
         "type": "单级下拉筛选",
         "default": "全部",
@@ -9566,7 +9673,7 @@ window.PAGES = [
         "note": "可能多个"
       },
       {
-        "name": "菜品模板状态",
+        "name": "供应商模板状态",
         "description": "当前菜品是否存在启用状态的菜品溯源模板",
         "note": "已配置/未配置"
       },
@@ -10468,27 +10575,6 @@ window.PAGES = [
         "name": "状态"
       },
       {
-        "name": "菜品模板编码"
-      },
-      {
-        "name": "菜品模板版本"
-      },
-      {
-        "name": "原料模板编码"
-      },
-      {
-        "name": "原料模板版本"
-      },
-      {
-        "name": "供应商模板编码"
-      },
-      {
-        "name": "供应商模板版本"
-      },
-      {
-        "name": "模板是否更新"
-      },
-      {
         "name": "生效开始时间"
       },
       {
@@ -10508,9 +10594,6 @@ window.PAGES = [
         "name": "菜品名称"
       },
       {
-        "name": "消费者评论"
-      },
-      {
         "name": "适用门店"
       },
       {
@@ -10518,7 +10601,8 @@ window.PAGES = [
       }
     ],
     "rules": [
-      "（1）每个门店每个菜同一时点仅一份有效消费者展示配置，范围冲突时阻止发布"
+      "（1）每个门店每个菜同一时点仅一份有效消费者展示配置，范围冲突时阻止发布",
+      "消费者是否可评价及问卷内容由列表全局“评价模板配置”统一管理，适用所有菜品。"
     ],
     "description": "按门店配置消费者溯源报告可展示的环节、字段、顺序、说明及熔断规则，并预览配置后的实际呈现。熔断用于控制未核实、不可用或异常数据的展示方式，不能改写原始异常数据、掩盖已确认食安事实或将异常包装为正常。",
     "uiActions": [
@@ -11276,19 +11360,28 @@ window.PAGES = [
         "note": ""
       },
       {
-        "name": "原料分类",
-        "description": "来源系统提供的分类",
-        "note": "零售商品、成品、半成品、原材料、低值易耗品、备品备件、固定资产\n溯源系统只需要2/3/4\n此处为4，以下模块分别为3/2"
+        "name": "基本单位"
       },
       {
-        "name": "规格",
-        "description": "",
-        "note": ""
+        "name": "基本单位描述"
       },
       {
-        "name": "基本单位",
-        "description": "",
-        "note": ""
+        "name": "物料类型"
+      },
+      {
+        "name": "物料类型描述"
+      },
+      {
+        "name": "装载组"
+      },
+      {
+        "name": "物料状态"
+      },
+      {
+        "name": "装运条件"
+      },
+      {
+        "name": "批次管理"
       },
       {
         "name": "是否有溯源卡",
@@ -11318,20 +11411,10 @@ window.PAGES = [
     ],
     "tabs": [
       {
-        "name": "关联溯源卡",
-        "mode": "trace-cards",
-        "fields": [
-          {
-            "name": "序号"
-          },
-          {
-            "name": "更新时间"
-          },
-          {
-            "name": "查看"
-          }
-        ],
-        "note": "点击查看结构化溯源卡信息"
+        "name": "关联原料溯源卡",
+        "mode": "material-trace-card",
+        "fields": [],
+        "note": ""
       },
       {
         "name": "原料验收标准",
@@ -11521,7 +11604,8 @@ window.PAGES = [
       "关联溯源模板",
       "关联溯源卡"
     ],
-    "detailMode": "drawer"
+    "detailMode": "drawer",
+    "hiddenFromMenu": true
   },
   {
     "id": "dish",
@@ -11576,19 +11660,28 @@ window.PAGES = [
         "note": ""
       },
       {
-        "name": "成品分类",
-        "description": "来源系统提供的分类",
-        "note": ""
+        "name": "基本单位"
       },
       {
-        "name": "规格",
-        "description": "",
-        "note": ""
+        "name": "基本单位描述"
       },
       {
-        "name": "基本单位",
-        "description": "",
-        "note": ""
+        "name": "物料类型"
+      },
+      {
+        "name": "物料类型描述"
+      },
+      {
+        "name": "装载组"
+      },
+      {
+        "name": "物料状态"
+      },
+      {
+        "name": "装运条件"
+      },
+      {
+        "name": "批次管理"
       },
       {
         "name": "是否有溯源卡",
@@ -15535,14 +15628,13 @@ window.PAGES = [
         "note": ""
       },
       {
-        "name": "评价打分",
-        "description": "1-5星打几星",
-        "note": ""
+        "name": "问卷版本"
       },
       {
-        "name": "评价类型",
-        "description": "开放性反馈的类型标签",
-        "note": ""
+        "name": "评价时间"
+      },
+      {
+        "name": "评价来源"
       },
       {
         "name": "评价内容",
@@ -15568,7 +15660,7 @@ window.PAGES = [
       "门店处于营业状态、菜单中存在菜品均不能证明该菜品当天实际在售",
       "待确认事项不同渠道可能有重复菜品，溯源系统值只会生成一个菜品报告，支撑不同渠道的溯源（BOM不一致不算同一菜品）"
     ],
-    "description": "“菜品溯源记录”功能旨在末端针对用户侧发生的溯源和评价记录进行收集，进行用户侧溯源实例的收集与统计，来确保溯源的效果并持续进行数据分析与优化。",
+    "description": "记录每次溯源评价的问题与回答；支持星级评分、开放问题、单选及多选。详情按提交时的问卷结构回显，模板修改不改变历史回答。",
     "uiActions": [
       "查看"
     ],
@@ -15597,12 +15689,6 @@ window.PAGES = [
         "match": "模糊查询"
       },
       {
-        "name": "适用系统",
-        "type": "下拉列表",
-        "default": "全部授权系统",
-        "match": "精准查询"
-      },
-      {
         "name": "状态",
         "type": "下拉列表",
         "default": "全部",
@@ -15625,16 +15711,6 @@ window.PAGES = [
         "name": "角色名称",
         "description": "角色展示名称",
         "note": "必填"
-      },
-      {
-        "name": "适用系统",
-        "description": "角色可访问的应用范围",
-        "note": "以实际接入系统为准"
-      },
-      {
-        "name": "数据范围",
-        "description": "授权组织、门店、仓库等范围摘要",
-        "note": "详情展示完整范围"
       },
       {
         "name": "关联用户数",
@@ -15696,12 +15772,12 @@ window.PAGES = [
     "actions": [
       {
         "name": "新建/编辑",
-        "description": "维护名称、适用系统及说明，保存前校验必填与编码唯一性",
+        "description": "维护名称与说明，保存前校验必填与编码唯一性",
         "note": "编辑不改变编码"
       },
       {
         "name": "配置权限",
-        "description": "分别选择菜单、操作及数据范围，提交前展示权限变化和受影响用户数",
+        "description": "分别选择菜单及操作权限，提交前展示权限变化和受影响用户数",
         "note": "不得授予超出本人可授权范围的权限"
       },
       {
@@ -15728,20 +15804,14 @@ window.PAGES = [
         "name": "角色名称"
       },
       {
-        "name": "适用系统"
-      },
-      {
         "name": "说明"
-      },
-      {
-        "name": "数据范围"
       },
       {
         "name": "状态"
       }
     ],
     "rules": [],
-    "description": "维护系统角色及其菜单、操作和数据权限，支持按组织、门店、仓库等业务范围授权，保证不同岗位仅访问职责范围内的溯源数据与配置。",
+    "description": "维护角色的菜单和操作权限；用户数据范围在用户管理中独立配置。",
     "uiActions": [
       "查看",
       "编辑",
@@ -15826,7 +15896,7 @@ window.PAGES = [
       },
       {
         "name": "数据范围",
-        "description": "用户可访问范围摘要",
+        "description": "用户独立配置的门店、区域公司、工厂、仓库、产品品类、供应商分类六维权限",
         "note": "与角色权限共同计算"
       },
       {
@@ -15929,16 +15999,10 @@ window.PAGES = [
         "name": "姓名"
       },
       {
-        "name": "所属组织"
-      },
-      {
         "name": "角色"
       },
       {
         "name": "数据范围"
-      },
-      {
-        "name": "联系方式"
       },
       {
         "name": "账号来源/状态"

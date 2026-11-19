@@ -19,7 +19,7 @@ function materialTraceCards(p=page(),r=row()){
  if(Array.isArray(r._traceCards))return r._traceCards.filter(c=>Number(c.deleted||0)!==1).sort((a,b)=>String(b.update_time||'').localeCompare(String(a.update_time||'')));
  if(r['是否有溯源卡']==='否')return [];
  const e=materialEntity(p,r);
- return [0,1,2].map(i=>({
+ return (p.id==='material'?[0]:[0,1,2]).map(i=>({
   id:`TC-${p.id}-${e.code}-${i+1}`,source_type:i===2?'manual':'standard',standard_id:i===2?null:`YS-${e.code}`,
   standard_release_id:i===2?null:`YS-${e.code}-V${3-i}`,wlmc:e.name,wljc:e.name,wlbm:e.code,relation_id:e.code,wlfl:e.category,
   ccyq:p.id==='dish'?'制作后按门店出餐规范暂存':'按物料规定温层分区存放，保持包装完好',
@@ -126,4 +126,70 @@ function dishCraftHTML(){
  const steps=[['备料','按菜品配方核对原料名称、规格和用量','操作台 / 备料容器','按标准完成清洗、分切及备料'],[method,`按${name}作业规范进行${method}`,'对应烹饪设备','火力、时间及中心温度按已发布作业标准执行'],['出餐','核对成品状态后按份装盘','出餐器具','检查色泽、口感、份量与摆盘，完成出餐复核']];
  const fields={'工艺编号':'GY-DEMO-'+r['成品编码'],'工艺版本':'V1.0','菜品名称':name,'加工方式':method,'适用场景':'门店制作与出餐','单份配方基准':'1份（演示）','主要设备':'按门店设备清单配置','标准用时':'待工艺标准确认','质量控制点':'熟制状态、感官、份量与交叉污染控制','出餐要求':'按菜品摆盘规范及时出餐','更新时间':'2026-10-23 10:00:00','编制部门':'产品研发部（演示）'};
  return `<p class="note">以下为原型示例工艺字段与步骤，实际加工参数以已发布作业标准为准。</p>${infoHTML(Object.keys(fields).map(name=>({name})),fields)}<div class="section-title">加工步骤</div><div class="table-scroll"><table class="data-table craft-table"><thead><tr><th>步骤</th><th>工序名称</th><th>操作说明</th><th>使用设备 / 工具</th><th>关键控制要求</th></tr></thead><tbody>${steps.map((s,i)=>`<tr><td>${i+1}</td>${s.map(v=>`<td>${esc(v)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+}
+
+function materialCardDetails(card){
+ const sections=[
+  ['基本信息',card.basics],
+  ['感官指标',card.sensory,['项目','标准']],
+  ['检验指标',card.inspections,['项目','限制','执行标准','检测方法']],
+  ['资质证件',card.credentials,['证件名称','收集与归档情况']],
+  ['储运要求',card.storage],
+  ['供应商信息',card.supplier],
+  ['包装标签',card.label],
+  ['营养成分表',card.nutrition,['项目','每100g','NRV%']]
+ ];
+ return '<div class="material-card-sections">'+sections.filter(([,entries])=>entries?.length).map(([title,entries,headers])=>{
+  if(!headers)return panel(title,`<dl class="info-grid material-card-fields">${entries.map(([name,value])=>`<div class="info-item"><dt>${esc(name)}</dt><dd class="value">${esc(value||'—')}</dd></div>`).join('')}</dl>`);
+  const fields=headers.map(name=>({name}));
+  const rows=entries.map(values=>Object.fromEntries(headers.map((name,i)=>[name,values[i]||'—'])));
+  return panel(title,tableHTML(page(),rows,fields));
+ }).join('')+'</div>';
+}
+
+function materialTraceCardHTML(r){
+ if(r._key==='material-black-layer')return materialCardDetails(blackLayerTraceCard());
+ const card=materialTraceCards(page(),r)[0];
+ if(!card)return '<div class="empty">暂无关联原料溯源卡</div>';
+ const basics=[['产品名称',card.wlmc],['产品分类',card.wlfl],['用途',card.yt],['产地',card.cd],
+  ['是否转基因',traceCardValue('sfgm',card.sfgm)],['是否添加防腐剂',traceCardValue('sftjfj',card.sftjfj)]];
+ const storage=[['存储要求',card.ccyq],['运输要求',card.ysyq],['保质期',card.bzq],['允收期',card.ysq]];
+ // Existing single-card data may contain arrays or serialized records from the PLM mock.
+ return materialCardDetails({basics,storage})+
+  [['感官指标','ggzb'],['理化指标','lhzb'],['微生物指标','wswzb'],['供应商信息','gysxx']]
+   .map(([title,key])=>panel(title,traceCardJSON(card,key))).join('');
+}
+
+function blackLayerTraceCard(){
+ return {
+  basics:[['产品名称','黑千层，600G/包'],['产品分类','速冻食品'],['用途',''],['产地',''],
+   ['是否转基因',''],['是否添加防腐剂','']],
+  sensory:[
+   ['规格','600G/包（固形物含量不低于500g）'],
+   ['色泽','呈黑褐色、深棕褐色，色泽自然，无异常发白、发灰、发绿现象，无血点'],
+   ['气味','具有牛毛肚特有的气味，无腐败、酸败、腥臭等异味'],
+   ['形态','千层叶片层次清晰，肚丝完整，碎渣少；肉质紧实有弹性，手捏回弹好，无软烂、发黏现象'],
+   ['固形物含量','解冻后拆袋倒入漏勺沥水3-5分钟，至滴水不成线，固形物重量不低于500G/包']
+  ],
+  inspections:[
+   ['铅（以Pb计）/（mg/kg）','≤0.45','Q/HDSP 0001 S','GB 5009.12'],
+   ['总砷（以As计）/（mg/kg）','≤0.5','Q/HDSP 0001 S','GB 5009.11'],
+   ['镉（以Cd计）/（mg/kg）','≤0.1','Q/HDSP 0001 S','GB 5009.15'],
+   ['铬（以Cr计）/（mg/kg）','≤1.0','Q/HDSP 0001 S','GB 5009.123'],
+   ['N-二甲基亚硝胺/（μg/kg）','≤3','Q/HDSP 0001 S','GB 5009.26']
+  ],
+  credentials:[['营业执照','SRM已收集审核归档'],['食品安全许可证',''],['型检报告',''],
+   ['出厂检验报告','WMS已收集审核归档']],
+  storage:[['存储要求','冷藏'],['运输要求','冷链运输'],['保质期','59天（10家门店使用测试）'],
+   ['允收期','进货日期距离生产日期1/3期限']],
+  supplier:[['名称',''],['联系人',''],['联系电话','']],
+  label:[['品名','黑千层'],['净含量','600g（固形物≥500g）'],['生产日期','2026/08/25'],
+   ['保质期至','2026/10/23'],['配料','牛百叶、水、食品添加剂（碳酸钠、木瓜蛋白酶）'],
+   ['贮存条件','0–4℃保存'],['产品执行标准代号','Q/HDSP 0001 S'],['产品编码','Q2000001S'],
+   ['生产商','重庆恒都食品开发有限公司'],['食品生产许可证编号','SC11150023007972'],
+   ['地址','重庆市丰都县高家镇新区（食品工业园区）'],['电话','400-696-5976'],
+   ['产地','重庆市丰都县'],['食用方法','沥干后涮火锅、爆炒或烫熟后凉拌食用。']],
+  nutrition:[['能量','425kJ','6%'],['蛋白质','10.2g','17%'],['脂肪','6.8g','11%'],
+   ['碳水化合物','0g','0%'],['钠','547mg','27%']]
+ };
 }
