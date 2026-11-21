@@ -8,13 +8,16 @@ function btn(t,a,cls='',extra=''){return `<button class="${cls}" data-act="${a}"
 function ibtn(t,a,ic,cls='',extra=''){return `<button class="btn-icon ${cls}" data-act="${a}" ${extra}>${icon(ic)}${esc(t)}</button>`}
 const groups=[...new Set(PAGES.filter(p=>!p.hiddenFromMenu).map(p=>p.group))];
 const groupIcons=['report','shield','template','alert','leaf','farm','box','box','gear','truck','store','user','gear'];
-const state={routeContext:readTemplateRouteContext(),page:'forward',index:0,tab:0,stage:0,expanded:false,filters:{},pageNo:1,size:10,openGroups:new Set(['溯源报告查询中心']),selected:new Set(),overlay:null,subQuery:'',navQuery:'',menuChannel:'TS01',relationStep:1,editor:null,components:[],componentIndex:0,conditions:[],stageDraft:[]};
+const state={routeContext:readTemplateRouteContext(),page:'forward',index:0,tab:0,stage:0,expanded:false,filters:{},pageNo:1,size:10,openGroups:new Set(['溯源报告查询中心']),selected:new Set(),overlay:null,detailTables:new Map(),reportTables:new Map(),navQuery:'',menuChannel:'TS01',relationStep:1,editor:null,components:[],componentIndex:0,conditions:[],stageDraft:[]};
 let dataStore={};try{dataStore=JSON.parse((localStorage.getItem('lxj-prototype-v1')||'{}').replace(/蛋品出库/g,'牧场出库'))}catch{}
 function persist(){try{localStorage.setItem('lxj-prototype-v1',JSON.stringify(dataStore))}catch{toast('当前浏览器无法保存演示数据')}}
+const kitchenNames=['合肥中央厨房','南京中央厨房','上海中央厨房'];
 const materialNames=['鸡腿肉','鲜鸡蛋','香菇','稻米','鸡胸肉','黄豆'];
 const dishNames=['香菇炖鸡','农家蒸蛋','肥西老母鸡汤','毛豆烧鸡','鸡汁娃娃菜','香菇鸡腿饭'];
 const storeNames=['合肥政务万达店','南京新仁里店','上海虹桥天地店','杭州西湖银泰店','合肥银泰中心店','南京建邺万达店'];
 function options(name,page){
+ const source=window.LXJ_SOURCE.pages[page.id];
+ if(source&&/状态|经营类型|送货类型|配送方式/.test(name))return [...new Set(source.map(r=>r[name]).filter(Boolean))];
  if(name==='关联关系配置状态')return ['已配置','未配置','配置中'];
  if(name==='报告状态')return ['开放中','已关闭'];
  if(name==='是否加急')return ['不加急','应用内加急','短信加急','电话加急'];if(name==='消费者评论')return ['关闭','开启'];if(name==='环节适用类型'||name==='环节类型')return ['菜品','原料','供应商'];if(name==='配置状态')return ['启用','禁用'];if(name==='告警角色')return ['食安管理员','门店负责人','仓储食安人员'];if(name==='告警用户')return ['王敏','李晓','陈宁'];if(name.includes('是否'))return ['是','否'];
@@ -135,6 +138,16 @@ function sample(name,i,p){
  return '—';
 }
 function records(p){
+ if(p.id==='kitchen'&&!dataStore.kitchen){
+  dataStore.kitchen=kitchenNames.map((name,i)=>({
+   _key:'kitchen-demo-'+i,'央厨ID':'CK00'+(i+1),'央厨名称':name,'创建人':'食安管理员',
+   '创建时间':'2026-11-19 09:00:00','更新人':'食安管理员','更新时间':'2026-11-19 09:00:00'
+  }));
+ }
+ const source=window.LXJ_SOURCE.pages[p.id];
+ if(source&&(!dataStore[p.id]?.length||!dataStore[p.id].every(r=>r._sourceSample))){
+  dataStore[p.id]=structuredClone(source);
+ }
  if(!dataStore[p.id]){
   if(p.id==='dish-template-detail'){dataStore[p.id]=overviewDishTemplates(p);return dataStore[p.id]}
   const fs=[...p.columns,...(p.reportDetailColumns||[]),...(p.detailFields||[]),...(p.healthFields||[]),...p.form,...p.tabs.flatMap(t=>t.fields),...p.filters];
@@ -155,6 +168,7 @@ function records(p){
  if(p.id==='alert-level')dataStore[p.id].forEach((r,i)=>{if(!r['告警级别名称']||r['告警级别名称']==='—')r['告警级别名称']=['一级','二级','三级'][i%3]});
  if(p.id==='alert-group')dataStore[p.id].forEach((r,i)=>{if(!r['告警用户组名称']||r['告警用户组名称']==='—')r['告警用户组名称']=['门店负责人组','仓储食安组','供应商质量组'][i%3]});
  if(['forward','material-reverse'].includes(p.id))dataStore[p.id].forEach((r,i)=>{if(r['原料收货数量']==null)r['原料收货数量']=sample('原料收货数量',i,p)});
+ if(p.id==='material-reverse')appendSourceTraceReports(dataStore[p.id]);
  if(p.id==='reverse')dataStore[p.id].forEach(normalizeDishReport);
  if(p.id==='public-report')dataStore[p.id].forEach(normalizeConsumerReport);
  if(['material','dish'].includes(p.id))normalizeMaterialMaster(p,dataStore[p.id]);
@@ -183,6 +197,7 @@ function valueCell(name,v,p,i){
  if(p.id==='complaint'&&name==='食安事件责任方')return esc(v||'待定位');
  if(name==='消费者溯源开关')return switchHTML(v!=='禁用','toggle-switch',`data-index="${i}" data-field="${esc(name)}"`);
  if(name.includes('状态')||name==='是否有溯源卡'||name==='是否配置溯源模板')return status(v);
+ if(v==='—'&&['营业执照','门店营业执照'].includes(name)&&['supplier','store'].includes(p.id))return '—';
  if(['预览','附件查看','查看','详情','复制','下载','健康证图片','营业执照','门店营业执照','附件地址','附件','检测附件'].includes(name))return btn(name==='下载'?'下载':'预览',name==='下载'?'download':'attachment','text',`data-name="${esc(name)}"`);
  if(/编码|单号|任务号|ID/.test(name))return `<span class="code">${esc(v)}</span>`;
  if(name==='关联物料'||name==='关联原料'||name==='适用门店')return `<button class="text" data-act="row-action" data-index="${i}" data-label="${name==='关联物料'?'关联物料':name==='适用门店'?'适用门店':'关联原料'}"><span class="truncate" title="${esc(v)}">${esc(v)}</span></button>`;
@@ -192,9 +207,9 @@ function switchHTML(on,act,extra=''){return `<button class="switch ${on?'on':''}
 function actionsCell(p,i){if(p.id==='overview')return p.uiActions.map(a=>btn(a,'row-action','text',`data-index="${i}" data-label="${esc(a)}"`)).join('');if(p.id==='public-report')return btn('查看','row-action','text',`data-index="${i}" data-label="查看"`)+btn('关闭溯源报告','row-action','text',`data-index="${i}" data-label="关闭溯源报告" ${dataStore[p.id][i]['报告状态']==='已关闭'?'disabled':''}`)+btn('更多','more-actions','text',`data-index="${i}"`);return p.uiActions.slice(0,2).map(a=>btn(a,'row-action','text',`data-index="${i}" data-label="${esc(a)}"`)).join('')+(p.uiActions.length>2?btn('更多','more-actions','text',`data-index="${i}"`):'')}
 function tableHTML(p,rows,fields=p.columns,main=false){
  const hasAction=fields.some(f=>f.name==='操作');
- const ff=main&&!hasAction&&p.uiActions.length?[...fields,{name:'操作'}]:fields;
+ const ff=main&&!hasAction&&p.uiActions.length&&p.showActionColumn!==false?[...fields,{name:'操作'}]:fields;
  const all=main?dataStore[p.id]:null;
- return `<div class="table-scroll"><table class="data-table"><thead><tr>${main&&p.id==='public-report'?`<th class="check sticky-check"><input type="checkbox" data-public-select-page aria-label="选择本页可关闭报告" ${rows.every(r=>r['报告状态']==='已关闭')?'disabled':''} ${rows.some(r=>r['报告状态']!=='已关闭')&&rows.filter(r=>r['报告状态']!=='已关闭').every(r=>state.closedSelection?.has(r._key))?'checked':''}></th>`:main&&p.kind==='template'?'<th class="check">选择</th>':''}${ff.map((f,i)=>`<th class="${main&&i===0?'sticky-first':''} ${f.name==='操作'?'sticky-action':''}" title="${esc(f.description||f.note||f.name)}">${esc(f.name)}</th>`).join('')}</tr></thead><tbody>${rows.length?rows.map((r,k)=>`<tr>${main&&p.id==='public-report'?`<td class="check sticky-check"><input type="checkbox" data-public-key="${esc(r._key)}" aria-label="选择报告 ${esc(r['消费者溯源报告编码'])}" ${state.closedSelection?.has(r._key)?'checked':''} ${r['报告状态']==='已关闭'?'disabled':''}></td>`:''}${main&&p.kind==='template'?`<td class="check"><input type="radio" name="template-choice" data-act="select-template" value="${all.indexOf(r)}" ${state.templateChoice===all.indexOf(r)?'checked':''} aria-label="选择模板"></td>`:''}${ff.map((f,i)=>`<td class="${main&&i===0?'sticky-first':''} ${f.name==='操作'?'sticky-action':''}">${main&&(p.id==='public-report'?f.name==='消费者溯源报告编码':i===0)&&p.uiActions.length?`<button class="text code" data-act="row-action" data-index="${all.indexOf(r)}" data-label="查看">${esc(r[f.name])}</button>`:valueCell(f.name,r[f.name]??'—',p,main?all.indexOf(r):k)}</td>`).join('')}</tr>`).join(''):`<tr><td colspan="${ff.length}" class="empty">暂无符合条件的数据</td></tr>`}</tbody></table></div>`;
+ return `<div class="table-scroll"><table class="data-table"><thead><tr>${main&&p.id==='public-report'?`<th class="check sticky-check"><input type="checkbox" data-public-select-page aria-label="选择本页可关闭报告" ${rows.every(r=>r['报告状态']==='已关闭')?'disabled':''} ${rows.some(r=>r['报告状态']!=='已关闭')&&rows.filter(r=>r['报告状态']!=='已关闭').every(r=>state.closedSelection?.has(r._key))?'checked':''}></th>`:main&&p.kind==='template'?'<th class="check">选择</th>':''}${ff.map((f,i)=>`<th class="${main&&i===0?'sticky-first':''} ${f.name==='操作'?'sticky-action':''}" title="${esc(f.description||f.note||f.name)}">${esc(f.name)}</th>`).join('')}</tr></thead><tbody>${rows.length?rows.map((r,k)=>`<tr>${main&&p.id==='public-report'?`<td class="check sticky-check"><input type="checkbox" data-public-key="${esc(r._key)}" aria-label="选择报告 ${esc(r['消费者溯源报告编码'])}" ${state.closedSelection?.has(r._key)?'checked':''} ${r['报告状态']==='已关闭'?'disabled':''}></td>`:''}${main&&p.kind==='template'?`<td class="check"><input type="radio" name="template-choice" data-act="select-template" value="${all.indexOf(r)}" ${state.templateChoice===all.indexOf(r)?'checked':''} aria-label="选择模板"></td>`:''}${ff.map((f,i)=>`<td class="${main&&i===0?'sticky-first':''} ${f.name==='操作'?'sticky-action':''}">${main&&(p.id==='public-report'?f.name==='消费者溯源报告编码':i===0)&&p.uiActions.length&&p.linkFirstColumn!==false?`<button class="text code" data-act="row-action" data-index="${all.indexOf(r)}" data-label="查看">${esc(r[f.name])}</button>`:valueCell(f.name,businessFieldValue(p,ff,r,f.name),p,main?all.indexOf(r):k)}</td>`).join('')}</tr>`).join(''):`<tr><td colspan="${ff.length}" class="empty">暂无符合条件的数据</td></tr>`}</tbody></table></div>`;
 }
 function control(f,v='',readonly=false,scope='filter'){
  const name=f.name,opts=options(name,page());
@@ -207,7 +222,10 @@ function control(f,v='',readonly=false,scope='filter'){
 }
 function filtersHTML(p){const visible=state.expanded?p.filters:p.filters.slice(0,6);return `<section class="panel filters"><form id="filters-form"><div class="filter-grid">${visible.map(f=>`<div class="field"><label for="f-${esc(f.name)}">${esc(f.name)}</label>${control(f,state.filters[f.name]||'')}</div>`).join('')}</div><div class="filter-footer">${ibtn('搜索','search','search','primary','type="submit"')}${btn('重置','reset','info','type="button"')}${p.filters.length>6?btn(state.expanded?'收起 ∧':'展开 ∨','expand','text','type="button"'):''}<span class="hint">${p.filters.length} 项查询条件 · 按更新时间倒序</span></div></form></section>`}
 function filteredRows(p){return records(p).filter(r=>Object.entries(state.filters).every(([name,val])=>{
- if(typeof val==='object'){const aliases={'生产日期时间段':'生产日期','收货时间':'收货日期','发生日期':'损耗发生日期','更新时间':'最后更新时间'};const n=name==='报告生成时间段'?'报告生成时间':name in r?name:aliases[name]||name;return (!val.start||String(r[n]).slice(0,10)>=val.start)&&(!val.end||String(r[n]).slice(0,10)<=val.end);}
+ if(typeof val==='object'){const aliases={'生产日期时间段':'生产日期','收货时间':'收货日期','发生日期':'损耗发生日期','更新时间':'最后更新时间'};const rangeField=name.endsWith('日期时间段')?name.slice(0,-3):name.replace(/时间段$/,'时间');
+  const n=window.LXJ_SOURCE.pages[p.id]?rangeField:name==='报告生成时间段'?'报告生成时间':name in r?name:aliases[name]||rangeField;
+  const date=String(r[n]||'').slice(0,10);
+  return (!val.start&&!val.end)||(date!==''&&(!val.start||date>=val.start)&&(!val.end||date<=val.end));}
  if(!val)return true;
  if(p.id==='public-report'&&['原料编码','原料名称','原料批次号','供应商编码','供应商名称','关联原料报告编码'].includes(name))return publicScopeMatches(r);
  if(p.id==='reverse'&&['原料编码','原料名称','关联原料溯源报告编码'].includes(name)){
@@ -218,29 +236,78 @@ function filteredRows(p){return records(p).filter(r=>Object.entries(state.filter
  return /精准|精确|编码精准/.test(f?.match||'')?String(r[name])===val:String(r[name]).toLowerCase().includes(val.toLowerCase());
  }))}
 function headingHTML(p,title=p.name,description=p.description||'',tools=''){return `<div class="page-heading"><div><h1>${esc(title)}</h1><p>${esc(description)}</p></div><div class="heading-tools">${tools}</div></div>`}
-function pagination(total,sub=false){const max=Math.max(1,Math.ceil(total/state.size));return `<div class="pagination"><span class="total">共 ${total} 条记录</span><select aria-label="每页条数" data-act="page-size"><option ${state.size===10?'selected':''} value="10">10 条 / 页</option><option ${state.size===20?'selected':''} value="20">20 条 / 页</option></select>${btn('‹','prev-page','','aria-label="上一页" '+(state.pageNo<=1?'disabled':''))}${Array.from({length:max},(_,i)=>btn(String(i+1),'go-page',state.pageNo===i+1?'primary':'',`data-num="${i+1}"`)).join('')}${btn('›','next-page','','aria-label="下一页" '+(state.pageNo>=max?'disabled':''))}<span>前往</span><input type="number" aria-label="跳转页码" value="${state.pageNo}" min="1" max="${max}" data-act="jump-page"><span>页</span></div>`}
+function pageCount(total,size){return Math.max(1,Math.ceil(total/size))}
+function pageRows(rows,view){
+ view.pageNo=Math.min(view.pageNo,pageCount(rows.length,view.size));
+ return rows.slice((view.pageNo-1)*view.size,view.pageNo*view.size);
+}
+function pagination(total,{pageNo,size}=state,scope='list',key=''){
+ const max=pageCount(total,size);
+ const pages=Array.from({length:max},(_,i)=>i+1);
+ return `<div class="pagination" data-page-scope="${scope}" data-page-key="${esc(key)}">
+ <span class="total">共 ${total} 条记录</span><select aria-label="每页条数" data-act="page-size">
+ ${[10,20].map(n=>`<option value="${n}" ${n===size?'selected':''}>${n} 条 / 页</option>`).join('')}</select>
+ ${btn('‹','go-page','',`aria-label="上一页" data-num="${pageNo-1}" ${pageNo===1?'disabled':''}`)}
+ ${pages.map(n=>btn(String(n),'go-page',pageNo===n?'primary':'',`data-num="${n}" ${pageNo===n?'aria-current="page"':''}`)).join('')}
+ ${btn('›','go-page','',`aria-label="下一页" data-num="${pageNo+1}" ${pageNo===max?'disabled':''}`)}
+ <span>前往</span><input type="number" aria-label="跳转页码" value="${pageNo}" min="1" max="${max}" data-act="jump-page"><span>页</span></div>`;
+}
+function tableView(views,key){
+ if(!views.has(key))views.set(key,{pageNo:1,size:10,query:''});
+ return views.get(key);
+}
+function renderDetailTable(control){
+ const body=control.closest('.overlay-body');
+ if(body){
+  const scroll=body.scrollTop;
+  renderOverlay();
+  $$('.overlay-body').at(-1).scrollTop=scroll;
+  return;
+ }
+ const expanded=$$('.report-material').map(el=>el.open);
+ render();
+ $$('.report-material').forEach((el,i)=>{el.open=expanded[i]??el.open});
+}
+function updatePagination(control,pageNo,size){
+ const pager=control.closest('[data-page-scope]');
+ const {pageScope,pageKey}=pager.dataset;
+ const view=pageScope==='list'?state:pageScope==='subtable'?tableView(state.detailTables,pageKey):pageScope==='report'?tableView(state.reportTables,pageKey):state.overlay;
+ const max=Number($('[data-act="jump-page"]',pager).max);
+ view.pageNo=Math.max(1,Math.min(Math.trunc(pageNo)||1,max));
+ if(size)view.size=size;
+ if(pageScope==='list')render();
+ else renderDetailTable(control);
+}
 function listHTML(p){
  if(p.id==='overview'){records(p).forEach(r=>{const graph=overviewGraph(r);const supplierCount=graph.branches.reduce((sum,b)=>sum+b.suppliers.length,0);r['供应商模板状态']=!graph.supplierTemplateCount?'未配置':graph.supplierTemplateCount===supplierCount?'已配置':'部分配置';r['原料模板状态']=graph.materialTemplateCount===graph.branches.length?'已配置':graph.materialTemplateCount===0?'未配置':'部分配置';r['原料模板配置状态']=r['原料模板状态'];r['关联原料名称']=graph.branches.map(b=>b.node.name).join('，');r['关联原料类型']=graph.branches.length>1?'多品类关联':'单一关联'})}
- const rows=filteredRows(p),start=(state.pageNo-1)*state.size;
+ const matches=filteredRows(p);
+ const rows=p.id==='material-reverse'&&!window.LXJ_SOURCE.publicDemo?[...matches].sort((a,b)=>Number(!!b._sourceTrace)-Number(!!a._sourceTrace)):matches;
  const editable=['template','link','alert','consumer','consumer-link','editable','knowledge'].includes(p.kind);
  const add=editable?ibtn(p.kind==='knowledge'?'上传文档':'新增','new','plus','primary'):'';
  return headingHTML(p,p.name,p.description,ibtn('刷新','refresh','refresh','plain'))+
  (p.id==='knowledge'?`<section class="panel"><div class="section-title">外部平台入口</div><div class="external-links">${btn('法规知识库 · 待配置','external','plain')}${btn('风险评估 · 待配置','external','plain')}</div></section>`:'')+
- filtersHTML(p)+`<section class="panel ${p.id==='public-report'?'public-report-list':''}">${p.id==='public-report'?publicReportSelectionHTML():''}<div class="table-toolbar"><h2>${esc(p.kind==='report'?'溯源报告列表':p.name+'列表')}</h2><span class="muted">${p.kind==='report'?'按批次归集 · 仅供查看':p.kind==='readonly'?'源系统同步数据':''}</span>${add}${p.id==='consumer'?btn('评价模板配置','survey-open','plain'):''}${p.id==='dish-display'?btn('按原料批量关闭展示','material-batch-open','primary'):''}${p.id==='location'?btn('批量添加','batch-import','plain'):''}${p.kind==='template'?btn('新增版本','new-version','plain'):''}</div>${tableHTML(p,rows.slice(start,start+state.size),p.columns,true)}${pagination(rows.length)}</section><p class="note">当前展示为原型演示数据；${['readonly','report','consumer-report'].includes(p.kind)?'业务事实以源系统数据为准。':'配置操作保存在本机浏览器，可用于交互评审。'}</p>`;
+ filtersHTML(p)+`<section class="panel ${p.id==='public-report'?'public-report-list':''}">${p.id==='public-report'?publicReportSelectionHTML():''}<div class="table-toolbar"><h2>${esc(p.kind==='report'?'溯源报告列表':p.name+'列表')}</h2><span class="muted">${window.LXJ_SOURCE.pages[p.id]?'按业务源表结构展示演示数据':p.kind==='report'?'按批次归集 · 仅供查看':p.kind==='readonly'?'源系统同步数据':''}</span>${add}${p.id==='consumer'?btn('评价模板配置','survey-open','plain'):''}${p.id==='dish-display'?btn('按原料批量关闭展示','material-batch-open','primary'):''}${p.id==='location'?btn('批量添加','batch-import','plain'):''}${p.kind==='template'?btn('新增版本','new-version','plain'):''}</div>${tableHTML(p,pageRows(rows,state),p.columns,true)}${pagination(rows.length)}</section><p class="note">当前展示为原型演示数据；${['readonly','report','consumer-report'].includes(p.kind)?'业务事实以源系统数据为准。':'配置操作保存在本机浏览器，可用于交互评审。'}</p>`;
 }
-function infoHTML(fields,r){return `<div class="info-grid">${fields.filter(f=>f.name!=='操作').map(f=>`<div class="info-item"><label>${esc(f.name)}</label><div class="value">${valueCell(f.name,r[f.name]??'—',page(),state.index)}</div></div>`).join('')}</div>`}
+function infoHTML(fields,r){return `<div class="info-grid">${fields.filter(f=>f.name!=='操作').map(f=>`<div class="info-item"><label>${esc(f.name)}</label><div class="value">${valueCell(f.name,businessFieldValue(page(),fields,r,f.name),page(),state.index)}</div></div>`).join('')}</div>`}
 function panel(title,body,tools=''){return `<section class="panel"><div class="section-title">${esc(title)}${tools?`<span class="right">${tools}</span>`:''}</div>${body}</section>`}
-function subRows(t){return Array.from({length:13},(_,i)=>{let r={};t.fields.forEach(f=>r[f.name]=sample(f.name,i,page()));return r})}
+function subRows(t){
+ const r=row();
+ if(r?._sourceSample)return r._sourceTabs?.[t.name]||[];
+ return Array.from({length:13},(_,i)=>{let r={};t.fields.forEach(f=>r[f.name]=sample(f.name,i,page()));return r})}
 function subtableHTML(t){
  if(t.mode==='material-trace-card')return materialTraceCardHTML(row());
  if(t.mode==='trace-cards')return traceCardListHTML();
  if(t.mode==='dish-craft')return dishCraftHTML();
  if(page().id==='dish'&&t.name==='BOM关系')return tableHTML(page(),dishMaterialRelations(row()).map(m=>({'父项编码':row()['成品编码'],'子项编码':m.code,'物料编码':m.code,'物料名称':m.name,'数量':'按有效配方','单位':'kg','BOM版本':'V1.0','生效开始时间':'2026-09-01','生效结束时间':'—','门店编码':'适用门店','映射状态':'已关联'})),t.fields);
- if(!t.fields.length)return `<div class="empty">${icon('empty')}<div>暂无已接入数据</div><p class="note">${esc(t.note||'具体字段待源接口清单提供')}</p></div>`;
+ if(row()?._sourceSample&&t.mode==='info'&&!t.fields.some(f=>row()[f.name]))return '<div class="empty">暂无此项演示数据</div>';
+ if(!t.fields.length)return `<div class="empty">${icon('empty')}<div>${row()?._sourceSample?'暂无此项演示数据':'暂无已接入数据'}</div><p class="note">${esc(t.note||'具体字段待源接口清单提供')}</p></div>`;
  if(t.mode==='info')return infoHTML(t.fields,row());
  if(t.mode==='remark')return `<div class="field"><label>食安备注</label><textarea id="food-remark">${esc(row()['食安备注']==='原型演示记录'?'':row()['食安备注']||'')}</textarea>${btn('保存','save-remark','primary')}</div>`;
- const rr=subRows(t).filter(r=>!state.subQuery||Object.values(r).join(' ').includes(state.subQuery));
- return `${/温度/.test(t.name)?chartHTML():''}<div class="sub-filter">${page().id==='store'&&t.name==='门店售卖菜单'?`<select id="menu-channel">${['TS01（堂食）','WX02（堂食扫码点餐）','MT03（美团外卖）','EL04（饿了么外卖）'].map(x=>`<option value="${x.slice(0,4)}" ${x.startsWith(state.menuChannel)?'selected':''}>${x}</option>`).join('')}</select>`:''}<input id="sub-query" placeholder="${t.name==='BOM关系'||t.name==='出库物料明细'?'物料编码 / 物料名称 / 批次':'输入关键词筛选明细'}" value="${esc(state.subQuery)}">${btn('搜索','sub-search','primary')}${btn('重置','sub-reset','info')}<span class="right muted">${t.fields.length} 个字段</span></div>${tableHTML(page(),rr.slice((state.subPage||0)*10,((state.subPage||0)+1)*10),t.fields)}<div class="pagination"><span class="total">共 ${rr.length} 条明细</span>${btn('上一页','sub-prev','',!state.subPage?'disabled':'')}${btn('下一页','sub-next','',(state.subPage||0)+1>=Math.ceil(rr.length/10)?'disabled':'')}</div>${t.note?`<p class="note">${esc(t.note)}</p>`:''}`;
+ const key=page().id+'-'+state.index+'-'+t.name;
+ const view=tableView(state.detailTables,key);
+ const rows=subRows(t).filter(r=>!view.query||Object.values(r).join(' ').includes(view.query));
+ return `${/温度/.test(t.name)?chartHTML():''}<div class="sub-filter" data-detail-table="${esc(key)}">${page().id==='store'&&t.name==='门店售卖菜单'?`<select id="menu-channel">${['TS01（堂食）','WX02（堂食扫码点餐）','MT03（美团外卖）','EL04（饿了么外卖）'].map(x=>`<option value="${x.slice(0,4)}" ${x.startsWith(state.menuChannel)?'selected':''}>${x}</option>`).join('')}</select>`:''}<input class="sub-query" aria-label="筛选${esc(t.name)}" placeholder="${t.name==='BOM关系'||t.name==='出库物料明细'?'物料编码 / 物料名称 / 批次':'输入关键词筛选明细'}" value="${esc(view.query)}">${btn('搜索','sub-search','primary')}${btn('重置','sub-reset','info')}<span class="right muted">${t.fields.length} 个字段</span></div>
+ ${tableHTML(page(),pageRows(rows,view),t.fields)}${pagination(rows.length,view,'subtable',key)}${t.note?`<p class="note">${esc(t.note)}</p>`:''}`;
 }
 function chartHTML(){return `<svg class="chart" viewBox="0 0 760 180" role="img" aria-label="演示温度曲线，温度在零下18.4至零下17.2摄氏度之间"><path d="M50 25H730 M50 65H730 M50 105H730 M50 145H730" stroke="rgba(144,147,153,.2)"/><text x="8" y="30">−16℃</text><text x="8" y="70">−17℃</text><text x="8" y="110">−18℃</text><text x="8" y="150">−19℃</text><path d="M50 118L115 103L180 114L245 97L310 108L375 82L440 103L505 105L570 118L635 104L730 108" stroke="#008042" stroke-width="2" fill="none"/><path d="M50 105H730" stroke="#e6a23c" stroke-dasharray="5 4"/><text x="50" y="174">09:00</text><text x="245" y="174">09:30</text><text x="440" y="174">10:00</text><text x="680" y="174">10:30</text></svg>`}
 const complaintRoutes={'供应商':'供应商协同系统','中央厨房':'中央厨房管理系统','大仓':'仓储管理系统','物流配送':'物流配送系统','门店':'门店管理系统'};
@@ -308,24 +375,24 @@ function generalDetail(p,r){
  return (p.kind==='consumer-report'?reportSummaryHTML((p.reportDetailColumns||p.columns).filter(f=>f.name!=='操作'),r):panel('基本信息',infoHTML([...p.columns.filter(f=>f.name!=='操作'),...(p.detailFields||[])],r)))+(p.id==='complaint'?complaintTrackingHTML(r):'')+(p.id==='public-report'&&r._closedAt?panel('关闭记录',infoHTML([{name:'关闭时间'},{name:'关闭人'},{name:'关联事件'},{name:'关闭原因'}],{'关闭时间':r._closedAt,'关闭人':r._closedBy,'关联事件':r._closeEvent||'—','关闭原因':r._closeReason||'历史关闭记录'})):'')+(tabs.length?`<section class="panel"><div class="tabs">${tabs.map((t,i)=>btn(t.name,'tab',`tab ${state.tab===i?'active':''}`,`data-num="${i}"`)).join('')}</div><div class="tab-body">${subtableHTML(tabs[state.tab]||tabs[0])}</div></section>`:'');
 }
 function reportDisplayHTML(html){return ['report','consumer-report'].includes(page().kind)?html.replace(/主表|子表|孙表/g,'').replace(/大仓/g,'仓储'):html}
+const reportLinkCache=new Map();
 function reportLinks(p=page(),includeQualifications=false){
- const links=structuredClone(REPORT_MODEL.links).filter(l=>!['牧场出库','农场养殖'].includes(l.name)),kitchen=links.find(l=>l.name==='央厨加工'),receipt=links.find(l=>l.tables.some(t=>t.id==='tb_whReceiptRecord'));
- if(kitchen&&receipt){
-  kitchen.tables=kitchen.tables.filter(t=>!['stb_rawMaterialReceipt','ftb_productionInspectionFile'].includes(t.id));
-  kitchen.tables.forEach(t=>{if(t.id==='ftb_productionInspection')t.name='成品检测'});
-  const input=kitchen.tables.find(t=>t.id==='stb_materialInput');
-  const processKeys=['processName','processReport','lastUpdated','attachmentUrl'];
-  kitchen.tables.push({id:'stb_productionProcess',name:'生产工序',parent:'tb_kitchenProduction',type:'2-子表',fields:[{key:'sequenceNo',name:'序号',visible:true,attribute:'数字',dataType:'2-整数',description:'当前生产订单内的工序顺序',example:''},...processKeys.map(key=>({...structuredClone(input.fields.find(f=>f.key===key)),name:({processName:'工序名称',processReport:'工序报告附件',lastUpdated:'更新时间',attachmentUrl:'附件地址'})[key],visible:true,processColumn:true}))]});
-
-  const source=receipt.tables.find(t=>t.id==='tb_whReceiptRecord');
-  const copied=receipt.tables.map(t=>({...structuredClone(t),id:'kitchen_'+t.id,parent:t===source?'tb_kitchenProduction':'kitchen_'+t.parent,type:t===source?'2-子表':'3-孙表',name:t===source?'仓储收货':t.name,_displayAsSection:t===source}));
-  kitchen.tables.splice(1,0,...copied);
+ const hideQualifications=!includeQualifications&&['forward','material-reverse'].includes(p.id);
+ const reverse=isReverseReport(p),cacheKey=[reverse,hideQualifications].join(':');
+ if(reportLinkCache.has(cacheKey))return reportLinkCache.get(cacheKey);
+ const links=structuredClone(REPORT_DETAIL_MODEL.links);
+ const kitchen=links.find(l=>l.name==='央厨加工'),receipt=links.find(l=>l.name==='仓储入库');
+ const copy=receipt.tables.map(t=>({
+  ...structuredClone(t),id:'kitchen_'+t.id,parent:t.parent?'kitchen_'+t.parent:'tb_kitchenProduction',
+  type:t.parent?'3-关联明细':'2-明细'
+ }));
+ kitchen.tables.splice(1,0,...copy);
+ if(hideQualifications)for(const link of links){
+  link.tables=link.tables.filter(t=>!isSupplierQualification(t)&&!t.id.endsWith('stb_supplyCapabilityList'));
  }
- if(!includeQualifications&&['forward','material-reverse'].includes(p.id))links.forEach(l=>{l.tables=l.tables.filter(t=>!isSupplierQualification(t));});
- const reverse=p.traceDirection==='reverse'||p.id==='reverse';
  if(reverse)links.reverse();
- if(kitchen&&receipt){links.splice(links.indexOf(kitchen),1);links.splice(links.indexOf(receipt)+(reverse?1:0),0,kitchen)}
- links.forEach(l=>{l.id=l.id.replace(/大仓/g,'仓储');l.name=l.name.replace(/大仓/g,'仓储');l.tables.forEach(t=>t.name=t.name.replace(/大仓/g,'仓储'))});return links;
+ reportLinkCache.set(cacheKey,links);
+ return links;
 }
 
 function dishReverseReports(r){
@@ -343,20 +410,28 @@ function reportVisibleFields(t){return t.fields.filter(f=>f.visible)}
 function reportValue(f,record,p,r,material,reportIndex=state.index){
  const key=f.key,name=f.name;
  if(key==='sequenceNo')return String(record+1);
+ if(key==='processNo')return 'OP'+String(record+1).padStart(2,'0');
  if(key==='processName')return ['原料预处理（演示）','调理（演示）','熟制（演示）','冷却包装（演示）'][record%4];
  if(key==='processReport')return '未接入';
- if(key==='productionTeams')return detailDemoValues(reportIndex)['班组'];
+ if(key==='team')return detailDemoValues(reportIndex)['班组'];
+ if(key==='workShopName')return detailDemoValues(reportIndex)['车间'];
+ if(key==='factoryId'||key==='factoryCode')return (key==='factoryId'?'CK':'PL')+'00'+(reportIndex%3+1);
+ if(key==='factoryName')return kitchenNames[reportIndex%kitchenNames.length];
+ if(key==='billNumber')return 'YC-RK'+String(reportIndex+1).padStart(4,'0')+'-'+(record+1);
+ if(key==='itemName'||key==='productName'&&p.id==='forward')return material.name;
  if(key==='workshops'||key==='productionLines')return detailDemoValues(reportIndex)[key==='workshops'?'车间':'流水线'];
- if(/^(itemCode|item_code|merchandise_code)$/.test(key))return material.code;
- if(/^(itemName|item_name)$/.test(key))return material.name;
- if(/^(batch|batchCode|batch_code|rawMaterialBatchCode|breedingBatchCode)$/.test(key))return material.batch;
- if(/^(store_code)$/.test(key))return r['门店编码']||'5141';
+ if(/^(itemCode|merchandiseCode|material)$/.test(key))return material.code;
+ if(f.name==='物料名称')return material.name;
+ if(/^(lot|batchCode|batchNo|materialBatchNo|rawMaterialBatchCode|produceBatchNo)$/.test(key))return material.batch;
+ if(/^(storeCode|sapStoreCode|consigneeUnitCode)$/.test(key))return r['门店编码']||'5141';
+ if(key==='consigneeUnitName')return r['门店名称']||storeNames[0];
+ if(key==='productBatchCode')return 'CP'+material.batch;
  if(f.masked||/Mobile|mobile|联系电话/.test(name+' '+key))return '138****1234';
  let ex=(f.example||'').trim();
  if(/^NULL|NULL 不允许|默认/.test(ex))return '—';
  if(ex===name||ex===key||ex===f.description||/需要增补|推测|物料ID|租户ID|通过逗号|用来处理锁/.test(ex))ex='';
  if(ex){ex=ex.replace(/["“”]/g,'').replace(/（[^）]*）/g,'').replace(/\([^)]*\)/g,'').trim();if(ex){if(record>0&&key==='temperature'&&Number.isFinite(Number(ex)))return (Number(ex)+(record%5)*0.15).toFixed(2);if(record>0&&(key==='id'||f.isPrimary)&&/^\d+$/.test(ex))return String(Number(ex)+record);if(record>0&&key==='guid')return ex.slice(0,-4)+String(record+1).padStart(4,'0');return ex;}}
- if(key==='pendingFieldDefinition')return '—';
+ if(['pendingFieldDefinition','productionEndTimePending2'].includes(key))return '—';
  if(/attachment|dataUrl|mageId/.test(key))return '未接入';
  if(/No$|Code$|_code$|fbillno|dailyRecordNo/.test(key))return 'DEMO'+String(reportIndex+1).padStart(4,'0')+String(record+1).padStart(2,'0');
  if(/quantity|Qty|Stock|Count|fqty|Quantity|quantity|fdeathqty/.test(key))return /received|actual|closing/i.test(key)?'98.0000':'100.0000';
@@ -366,32 +441,63 @@ function reportValue(f,record,p,r,material,reportIndex=state.index){
  const v=sample(name,record,p);return v==='原型演示记录'?'—':v;
 }
 function materialReverseContext(r){
+ if(r._sourceTrace){
+  const {receipt,line,production}=window.LXJ_SOURCE.chains[r._sourceTrace-1];
+  return {receiptCode:receipt['收货单号'],receiptGuid:receipt['记录标识'],lineGuid:line['记录标识'],
+   storeCode:receipt['门店编码'],storeName:receipt['门店名称'],receiptTime:receipt['确认时间']||receipt['收货日期'],
+   expectedReceiptTime:'—',materialCode:line['物料编码'],materialName:line['物料名称']||'名称未提供',
+   batchCode:line['批次号'],quantity:line['实收量'],productionDate:line['生产日期'],supplierCode:line['供应商编码'],
+   productionOrderNo:production['生产订单号']};
+ }
+
  const n=Number(String(r._key||'').match(/-(\d+)$/)?.[1]||state.index)+1,suffix=String(n).padStart(4,'0');
  const ctx={receiptGuid:'a8c71234-6b90-4e12-9d31-'+String(n).padStart(12,'0'),lineGuid:'b9d82345-7c01-4f23-8e42-'+String(n).padStart(12,'0'),receiptCode:'SH20260928'+suffix,storeCode:r['门店编码']||'51'+String(41+(n-1)%6),storeName:r['门店名称']||storeNames[(n-1)%6],deliveryOrderNo:'820260928'+suffix,purchaseOrderNo:'4500'+suffix,inboundCode:'RK20260923'+suffix,inboundId:String(100000+n),inboundDetailId:String(200000+n),outboundCode:'CK20260928'+suffix,outboundId:String(800000+n),outboundDetailId:String(800100+n),inventoryId:String(300000+n),taskId:String(900000+n),departCode:'FC20260928'+suffix,inspectionId:String(600000+n),warehouseCode:'WH00'+String(1+(n-1)%3),supplierCode:'SUP'+String(1+(n-1)%3).padStart(3,'0'),productionOrderNo:'MO20260926'+suffix,productionDate:String(r['原料生产日期']||'2026-09-15').slice(0,10),expectedReceiptTime:r['预计收货时间']||'2026-09-28 10:00:00',receiptTime:'2026-09-28 10:30:00',quantity:'98.0000'};
  ctx.materialCode=r['原料编码']||'100000';ctx.materialName=r['原料名称']||materialNames[(n-1)%6];ctx.batchCode=r['原料批次号']||'B202609280001';ctx.lineageKey=ctx.receiptGuid+'|'+ctx.materialCode+'|'+ctx.batchCode;return ctx;
 }
 function materialReverseLinkedValue(f,t,ctx){
- const map={store_code:ctx.storeCode,purchase_code:ctx.receiptCode,delivery_order_no:ctx.deliveryOrderNo,deliveryOrderNo:ctx.deliveryOrderNo,purchase_order_no:ctx.purchaseOrderNo,purchase_orde_no:ctx.purchaseOrderNo,purchaseOrderNo:ctx.purchaseOrderNo,purchaseOrderCode:ctx.purchaseOrderNo,warehouseCode:ctx.warehouseCode,receiptCode:ctx.inboundCode,receiptId:ctx.inboundId,receiptDetailId:ctx.inboundDetailId,shipmentCode:ctx.outboundCode,shipmentId:ctx.outboundId,shipmentDetailId:ctx.outboundDetailId,inventoryId:ctx.inventoryId,invId:ctx.inventoryId,taskId:ctx.taskId,orderId:ctx.outboundId,orderDetailId:ctx.outboundDetailId,departId:ctx.taskId,departCode:ctx.departCode,iqcId:ctx.inspectionId,iqcCode:'ZJ'+ctx.inboundCode.slice(2),productionOrderNo:ctx.productionOrderNo,itemCode:ctx.materialCode,item_code:ctx.materialCode,merchandise_code:ctx.materialCode,itemName:ctx.materialName,batch:ctx.batchCode,batchCode:ctx.batchCode,batch_code:ctx.batchCode,rawMaterialBatchCode:ctx.batchCode,breedingBatchCode:ctx.batchCode,manufactureDate:ctx.productionDate+' 00:00:00',make_date:ctx.productionDate+' 00:00:00',productionDate:ctx.productionDate,produceTimestamp:ctx.productionDate+' 08:00:00',shipFromCode:ctx.supplierCode,supplier:ctx.supplierCode,purchase_date:ctx.receiptTime.slice(0,10)+' 00:00:00',confirm_time:ctx.receiptTime,confirm_flag:'2',del_flag:'N',ship_date:'2026-09-28 08:00:00'};
- if(f.key==='guid')return t.id==='tb_storeRecvRecord'?ctx.receiptGuid:t.id==='stb_storeReceiptDetail'?ctx.lineGuid:undefined;
- if(t.id==='stb_storeReceiptDetail'){if(f.key==='received_quantity')return ctx.quantity;if(f.key==='receivable_quantity')return '100.0000';if(f.key==='difference_quantity')return '2.0000';}
- return Object.prototype.hasOwnProperty.call(map,f.key)?map[f.key]:undefined;
+ const id=t.id.replace(/^kitchen_/,'');
+ if(id==='tb_storeRecvRecord'){
+  return {guid:ctx.lineGuid,purchaseCode:ctx.receiptCode,purchaseOrdeNo:ctx.purchaseOrderNo,
+   storeCode:ctx.storeCode,sapStoreCode:ctx.storeCode,merchandiseCode:ctx.materialCode,batchCode:ctx.batchCode,
+   receivedQuantity:ctx.quantity,receivableQuantity:'100.0000',differenceQuantity:'2.0000',
+   makeDate:ctx.productionDate+' 00:00:00',supplier:ctx.supplierCode}[f.key];
+ }
+ if(id==='stb_storeRsecvRecord'){
+  return {guid:ctx.receiptGuid,purchaseCode:ctx.receiptCode,purchaseOrderNo:ctx.purchaseOrderNo,
+   storeCode:ctx.storeCode,sapStoreCode:ctx.storeCode,confirmTime:ctx.receiptTime,
+   purchaseDate:ctx.receiptTime.slice(0,10),confirmFlag:'2',shipDate:'2026-09-28 08:00:00'}[f.key];
+ }
+ const shared={warehouseCode:ctx.warehouseCode,receiptCode:ctx.inboundCode,receiptId:ctx.inboundId,
+  receiptDetailId:ctx.inboundDetailId,shipmentCode:ctx.outboundCode,shipmentId:ctx.outboundId,
+  shipmentDetailId:ctx.outboundDetailId,inventoryId:ctx.inventoryId,taskId:ctx.taskId,
+  orderId:ctx.outboundId,orderDetailId:ctx.outboundDetailId,departId:ctx.taskId,departCode:ctx.departCode,
+  iqcId:ctx.inspectionId,iqcCode:'ZJ'+ctx.inboundCode.slice(2),productionOrderNo:ctx.productionOrderNo,
+  itemCode:ctx.materialCode,itemName:ctx.materialName,lot:ctx.batchCode,batchNo:ctx.batchCode,
+  materialBatchNo:ctx.batchCode,rawMaterialBatchCode:ctx.batchCode,produceBatchNo:ctx.batchCode,
+  manufactureDate:ctx.productionDate+' 00:00:00',productionDate:ctx.productionDate,
+  produceTimestamp:ctx.productionDate+' 08:00:00',shipFromCode:ctx.supplierCode,
+  vendorCode:ctx.supplierCode,supplierNum:ctx.supplierCode,consigneeUnitCode:ctx.storeCode,
+  consigneeUnitName:ctx.storeName,departTime:'2026-09-28 08:00:00',
+  storeArrivalTime:ctx.receiptTime,purchaseOrderCode:ctx.purchaseOrderNo};
+ if(id==='tb_whAcceptRecord'&&f.key==='code')return ctx.purchaseOrderNo;
+ return shared[f.key];
 }
 function materialReverseReceiptHTML(p,r){if(!p.singleStoreReceipt)return '';const ctx=materialReverseContext(r),fields=[{name:'收货单号'},{name:'门店编码'},{name:'门店名称'},{name:'预计收货时间'},{name:'收货时间'},{name:'原料编码'},{name:'原料名称'},{name:'原料批次号'},{name:'实收数量'}];return reportSummaryHTML(fields,{'收货单号':ctx.receiptCode,'门店编码':ctx.storeCode,'门店名称':ctx.storeName,'预计收货时间':ctx.expectedReceiptTime,'收货时间':ctx.receiptTime,'原料编码':ctx.materialCode,'原料名称':ctx.materialName,'原料批次号':ctx.batchCode,'实收数量':ctx.quantity},'当前门店收货记录',5);}
 
 function baseReportRecords(t,materialIndex=0){
  const p=page(),r=row(),material=reportMaterials(p,r)[materialIndex]||reportMaterials(p,r)[0],source=material?.sourceReport||r,ctx=isReverseReport(p)?materialReverseContext(source):null;
- const sourcePage=ctx?PAGES.find(x=>x.id==='material-reverse'):p,sourceIndex=ctx?records(sourcePage).indexOf(source):state.index,singleLine=ctx&&t.id==='stb_storeReceiptDetail';
+ const sourcePage=ctx?PAGES.find(x=>x.id==='material-reverse'):p,sourceIndex=ctx?records(sourcePage).indexOf(source):state.index,singleLine=t.id==='stb_storeRsecvRecord';
  return Array.from({length:t.type.startsWith('1-')||singleLine?1:12},(_,index)=>{const values={};reportVisibleFields(t).forEach(f=>{const linked=ctx?materialReverseLinkedValue(f,t,ctx):undefined;values[f.key]=linked===undefined?reportValue(f,index,sourcePage,source,material,sourceIndex):linked});return {_index:index,values,...(ctx?{_lineageKey:ctx.lineageKey,_storeReceiptGuid:ctx.receiptGuid}:{})}});
 }
 
 function reportCell(f,v){
- if(f.processColumn&&['未接入','—',''].includes(v))return '<span class="muted">未接入</span>';
+ if(f.key==='processReport'&&['未接入','—',''].includes(v))return '<span class="muted">未接入</span>';
  if(Array.isArray(v))return multiValueHTML(v);
- if(/attachment|dataUrl|processReport/.test(f.key)||/附件|报告$/.test(f.name)&&!/^检验|检测/.test(f.name))return `<span class="report-file-value">${esc(v==='未接入'||v==='—'?'暂无附件':v)}</span> ${btn('预览','report-attachment','text',`data-name="${esc(f.name)}"`)}`;
+ if(/attachmentUrl|dataUrl|processReport|filePath|businessLicenseUrl/.test(f.key)||/附件地址|报告$/.test(f.name)&&!/^检验|检测/.test(f.name))return `<span class="report-file-value">${esc(v==='未接入'||v==='—'?'暂无附件':v)}</span> ${btn('预览','report-attachment','text',`data-name="${esc(f.name)}"`)}`;
  if(/status|flag|result|conclusion/i.test(f.key)&&v!=='—')return status(v);
  return `<span class="${/编码|单号|编号|ID|主键/.test(f.name)?'code ':' '}report-field-value" title="${esc(v)}">${esc(v)}</span>`;
 }
-function reportInfoHTML(t,record){return `<div class="info-grid report-info-grid">${reportVisibleFields(t).map(f=>`<div class="info-item" data-field-key="${esc(f.key)}"><label title="${esc(f.description)}">${esc(f.name)}</label><div class="value">${reportCell(f,record.values[f.key]??'—')}</div></div>`).join('')}</div>`}
+function reportInfoHTML(t,record){return `<div class="info-grid report-info-grid">${reportVisibleFields(t).map(f=>`<div class="info-item" data-field-key="${esc(f.key)}"><label title="${esc(f.description)}">${esc(f.name)}</label><div class="value">${reportCell(f,record?.values[f.key]??'—')}</div></div>`).join('')}</div>`}
 function reportTableKey(t,m){return page().id+'-'+state.index+'-'+m+'-'+t.id}
 function reportNestedTables(link,t){return link.tables.filter(child=>child.parent===t.id)}
 function isInlineReportLink(link){return page().id==='forward'&&link.name==='央厨加工'||isReverseReport()&&['门店收货','物流配送','仓储出库','仓储存储','央厨加工'].includes(link.name)}
@@ -406,27 +512,33 @@ function reportTableRecords(link,t,m,path=[]){
  return isInlineReportLink(link)?reportInlinePaths(link,t,m).flatMap(parentPath=>reportRecords(t,m,parentPath)):reportRecords(t,m,path);
 }
 function reportDataTable(link,t,materialIndex,parentPath=[]){
- const fields=reportVisibleFields(t),key=reportTableKey(t,materialIndex)+'/'+parentPath.join('.'),query=state.reportQueries?.[key]||'',date=state.reportDates?.[key]||{},pageNo=state.reportPages?.[key]||0;
+ const fields=reportVisibleFields(t),key=reportTableKey(t,materialIndex)+'/'+parentPath.join('.');
  if(!fields.length)return '<div class="empty">暂无已定义的展示字段</div>';
- const dateField=fields.find(f=>(f.searchType||'').startsWith('3-')||f.attribute==='日期');
+ const view=tableView(state.reportTables,key),{query,date={}}=view;
+ const dateField=fields.find(f=>f.searchType.startsWith('3-'))||fields.find(f=>f.dataType.startsWith('6-'));
  const records=reportTableRecords(link,t,materialIndex,parentPath).filter(r=>(!query||Object.values(r.values).some(v=>String(v).toLowerCase().includes(query.toLowerCase())))&&(!dateField||(!date.start||String(r.values[dateField.key]).slice(0,10)>=date.start)&&(!date.end||String(r.values[dateField.key]).slice(0,10)<=date.end)));
- const max=Math.max(1,Math.ceil(records.length/5)),current=Math.min(pageNo,max-1),rows=records.slice(current*5,(current+1)*5),children=link.name==='央厨加工'?reportNestedTables(link,t).filter(c=>!c._displayAsSection):isInlineReportLink(link)?[]:reportNestedTables(link,t),showReceipt=isInlineReportLink(link)&&t.parent==='kitchen_tb_whReceiptRecord';
- const receiptLabel=r=>reportRecords(link.tables.find(x=>x.id===t.parent),materialIndex,r._path.slice(0,-2))[r._path.at(-2)]?.values.receiptCode||'—';
- const exportKey=registerReportExport(key,{name:link.name+'-'+t.name,headers:[...(showReceipt?['关联收货单']:[]),...fields.map(f=>f.name)],rows:records.map(r=>[...(showReceipt?[receiptLabel(r)]:[]),...fields.map(f=>r.values[f.key]??'—')])});
+ const rows=pageRows(records,view);
+ const children=reportNestedTables(link,t).filter(child=>!reportSectionTables(link).includes(child));
+ const exportKey=registerReportExport(key,{name:link.name+'-'+t.name,headers:fields.map(f=>f.name),rows:records.map(r=>fields.map(f=>r.values[f.key]??'—'))});
  return `<div class="sub-filter report-filter" data-report-key="${esc(key)}"><input class="report-query" value="${esc(query)}" placeholder="搜索${esc(t.name)}" aria-label="${esc(t.name)}关键词">${dateField?`<label class="muted">${esc(dateField.name)}</label><div class="date-range"><input class="report-date-start" type="date" value="${esc(date.start||'')}" aria-label="开始日期"><span>至</span><input class="report-date-end" type="date" value="${esc(date.end||'')}" aria-label="结束日期"></div>`:''}${btn('搜索','report-search','primary')}${btn('重置','report-reset','info')}${ibtn('导出','report-export','export','plain',`data-export-key="${esc(exportKey)}" ${records.length?'':'disabled'}`)}<span class="muted report-export-hint">导出当前筛选的全部 ${records.length} 条记录</span></div>
- <div class="table-scroll"><table class="data-table report-data-table"><thead><tr>${showReceipt?'<th>关联收货单</th>':''}${fields.map(f=>`<th data-field-key="${esc(f.key)}" title="${esc(f.description)}">${esc(f.name)}</th>`).join('')}${children.length?'<th class="sticky-action">关联记录</th>':''}</tr></thead><tbody>${rows.map(r=>`<tr data-record-key="${esc(r._recordKey)}">${showReceipt?`<td class="code">${esc(receiptLabel(r))}</td>`:''}${fields.map(f=>`<td>${reportCell(f,r.values[f.key]??'—')}</td>`).join('')}${children.length?`<td class="sticky-action report-related-links">${children.map(c=>`<a href="#report-related" data-act="report-related" data-link="${esc(link.id)}" data-table="${esc(c.id)}" data-material="${materialIndex}" data-path="${esc(JSON.stringify(r._path))}">${esc(c.name.replace(/主表|子表|孙表/g,''))}（${reportRecords(c,materialIndex,r._path).length}）</a>`).join('')}</td>`:''}</tr>`).join('')||`<tr><td colspan="${fields.length+(children.length?1:0)+(showReceipt?1:0)}" class="empty">暂无符合条件的数据</td></tr>`}</tbody></table></div>
- <div class="pagination report-pagination" data-report-key="${esc(key)}"><span class="total">共 ${records.length} 条 · 5 条 / 页</span>${btn('上一页','report-prev','',current===0?'disabled':'')}<span>${current+1} / ${max}</span>${btn('下一页','report-next','',current>=max-1?'disabled':'')}</div>`;
+ <div class="table-scroll"><table class="data-table report-data-table"><thead><tr>${fields.map(f=>`<th data-field-key="${esc(f.key)}" title="${esc(f.description)}">${esc(f.name)}</th>`).join('')}${children.length?'<th class="sticky-action">关联记录</th>':''}</tr></thead><tbody>${rows.map(r=>`<tr data-record-key="${esc(r._recordKey)}">${fields.map(f=>`<td>${reportCell(f,r.values[f.key]??'—')}</td>`).join('')}${children.length?`<td class="sticky-action report-related-links">${children.map(c=>`<a href="#report-related" data-act="report-related" data-link="${esc(link.id)}" data-table="${esc(c.id)}" data-material="${materialIndex}" data-path="${esc(JSON.stringify(r._path))}">${esc(c.name.replace(/主表|子表|孙表/g,''))}${c.showRelatedCount===false?'':`（${reportRecords(c,materialIndex,r._path).length}）`}</a>`).join('')}</td>`:''}</tr>`).join('')||`<tr><td colspan="${fields.length+(children.length?1:0)}" class="empty">暂无符合条件或可关联的记录</td></tr>`}</tbody></table></div>
+ ${pagination(records.length,view,'report',key)}`;
 }
 
-function reportTemperatureChart(t,materialIndex,parentPath=[]){const f=reportVisibleFields(t).find(f=>f.key==='temperature'),time=reportVisibleFields(t).find(f=>/collectedTime|created/.test(f.key));if(!f||!time)return '';const rows=reportRecords(t,materialIndex,parentPath).slice(0,8),values=rows.map(r=>parseFloat(r.values[f.key])).filter(Number.isFinite);if(!values.length)return '';const min=Math.min(...values)-1,max=Math.max(...values)+1;const points=values.map((v,i)=>[50+i*680/Math.max(1,values.length-1),145-(v-min)/(max-min)*120]);return `<svg class="chart" viewBox="0 0 760 180" role="img" aria-label="${esc(t.name)}演示温度曲线"><path d="M50 25H730 M50 85H730 M50 145H730" stroke="rgba(144,147,153,.2)"/><text x="4" y="30">${max.toFixed(1)}℃</text><text x="4" y="150">${min.toFixed(1)}℃</text><polyline points="${points.map(p=>p.join(',')).join(' ')}" stroke="#008042" stroke-width="2" fill="none"/><text x="50" y="174">${esc(rows[0].values[time.key])}</text><text x="580" y="174">${esc(rows[rows.length-1].values[time.key])}</text></svg>`}
-function reportSectionTables(link){return link.name==='央厨加工'?link.tables.filter(t=>!t.parent||t._displayAsSection):isInlineReportLink(link)?link.tables:link.tables.filter(t=>!t.parent)}
-function reportSectionHTML(link,t,m,depth=0){
- if(link.name==='央厨加工')return `<section id="report-table-${m}-${link.tables.indexOf(t)}" class="report-source-section" data-report-table="${esc(t.id)}"><div class="report-source-heading"><h3>${esc(t.name)}</h3><span class="muted">${reportTableRecords(link,t,m).length} 条记录 · ${reportVisibleFields(t).length} 个字段</span></div><div class="report-table-body">${reportDataTable(link,t,m)}</div></section>`;
- if(isInlineReportLink(link)){
-  const records=reportTableRecords(link,t,m),singleRoute=isReverseReport()&&t.id==='stb_deliveryRoute',body=singleRoute?deliveryRouteMapHTML(m,records[0])+reportInfoHTML(t,records[0]):t.parent?`<div class="report-table-body">${reportTemperatureChart(t,m,reportInlinePaths(link,t,m)[0]||[])}${reportDataTable(link,t,m)}</div>`:reportInfoHTML(t,records[0]);
-  return `<section id="report-table-${m}-${link.tables.indexOf(t)}" class="report-source-section" data-report-table="${esc(t.id)}"><div class="report-source-heading"><h3>${esc(t.name)}</h3><span class="muted">${records.length} 条记录 · ${reportVisibleFields(t).length} 个字段</span></div>${body}</section>`;
- }
- return `<section id="report-table-${m}-${link.tables.indexOf(t)}" class="report-source-section" data-report-table="${esc(t.id)}"><div class="report-source-heading"><h3>${esc(t.name)}</h3><span class="muted">${reportRecords(t,m).length} 条记录 · ${reportVisibleFields(t).length} 个字段</span></div><div class="report-table-body">${reportDataTable(link,t,m)}</div></section>`;
+function reportTemperatureChart(t,materialIndex,parentPath=[]){const f=reportVisibleFields(t).find(f=>f.key==='temperature'),time=reportVisibleFields(t).find(f=>f.key==='collectTime')||reportVisibleFields(t).find(f=>f.key==='created');if(!f||!time)return '';const rows=reportRecords(t,materialIndex,parentPath).slice(0,8),values=rows.map(r=>parseFloat(r.values[f.key])).filter(Number.isFinite);if(!values.length)return '';const min=Math.min(...values)-1,max=Math.max(...values)+1;const points=values.map((v,i)=>[50+i*680/Math.max(1,values.length-1),145-(v-min)/(max-min)*120]);return `<svg class="chart" viewBox="0 0 760 180" role="img" aria-label="${esc(t.name)}演示温度曲线"><path d="M50 25H730 M50 85H730 M50 145H730" stroke="rgba(144,147,153,.2)"/><text x="4" y="30">${max.toFixed(1)}℃</text><text x="4" y="150">${min.toFixed(1)}℃</text><polyline points="${points.map(p=>p.join(',')).join(' ')}" stroke="#008042" stroke-width="2" fill="none"/><text x="50" y="174">${esc(rows[0].values[time.key])}</text><text x="580" y="174">${esc(rows[rows.length-1].values[time.key])}</text></svg>`}
+function reportSectionTables(link){
+ if(link.name==='央厨加工')return link.tables.filter(t=>!t.parent||t.parent==='tb_kitchenProduction');
+ return isInlineReportLink(link)?link.tables:link.tables.filter(t=>!t.parent);
+}
+function reportSectionHTML(link,t,m){
+ const records=reportTableRecords(link,t,m);
+ const singleRoute=isReverseReport()&&t.id==='stb_routeRecord',inline=isInlineReportLink(link)&&!t.parent;
+ let body;
+ if(!records.length&&(inline||singleRoute))body='<div class="empty">暂无可关联的演示记录</div>';
+ else if(singleRoute)body=deliveryRouteMapHTML(link,m,records[0])+reportInfoHTML(t,records[0]);
+ else if(inline)body=reportInfoHTML(t,records[0]);
+ else body=`<div class="report-table-body">${reportTemperatureChart(t,m,reportInlinePaths(link,t,m)[0]||[])}${reportDataTable(link,t,m)}</div>`;
+ return `<section id="report-table-${m}-${link.tables.indexOf(t)}" class="report-source-section" data-report-table="${esc(t.id)}"><div class="report-source-heading"><h3>${esc(t.name)}</h3><span class="muted">${records.length} 条记录 · ${reportVisibleFields(t).length} 个字段</span></div>${body}</section>`;
 }
 
 function reportChildOverlayHTML(o){
@@ -446,7 +558,7 @@ function reportHTML(p,r){
   overviewRow['仓储收货时间']=r['仓储收货时间']|| (receipt?reportRecords(receipt)[0]?.values.checkInAt:'—');
  }
  return headingHTML(p,p.name+'详情',`${p.id==='forward'?'正向追溯 · 原料到门店':p.singleStoreReceipt?'逆向追溯 · 当前门店收货原料到来源':'逆向追溯 · 菜品到来源'} · 报告编码 ${r['溯源报告编码']}`,ibtn('返回','back','back','plain'))+
- reportSummaryHTML(overviewFields,overviewRow)+materialReverseReceiptHTML(p,r)+
+ reportSummaryHTML(overviewFields,overviewRow)+materialReverseReceiptHTML(p,r)+(r._sourceTrace?'<p class="note">本报告根据演示收货明细的物料编码和批次匹配生产订单。未匹配到演示记录的环节留空。</p>':'')+
  `<div class="stage-bar report-stage-bar">${btn('‹','stage-prev','','aria-label="上一环节" '+(state.stage===0?'disabled':''))}${links.map((link,i)=>`<button class="stage-button ${state.stage===i?'active':''}" data-act="stage" data-num="${i}" aria-pressed="${state.stage===i}"><span class="stage-number">${i+1}</span>${esc(link.name)}</button>`).join('')}${btn('›','stage-next','','aria-label="下一环节" '+(state.stage===links.length-1?'disabled':''))}</div>
  <div class="report-body"><nav class="report-nav" aria-label="${esc(current.name)}信息定位"><div class="report-nav-caption">${esc(current.name)}</div>${current.tables.map((t,i)=>({...t,_tableIndex:i})).filter(t=>mainTables.some(main=>main.id===t.id)).map((t)=>`<button class="${t.parent?'report-nav-child':''}" data-act="report-anchor" data-num="${t._tableIndex}" title="${esc(t.name)}">${esc(t.name)}</button>`).join('')}</nav><div class="report-item">${materials.map((material,m)=>`<details ${p.id==='reverse'||m===0?'open':''} class="report-material"><summary>${esc(material.name)} · ${esc(material.code)}<span class="muted">${esc(material.batch)}</span></summary><div class="report-section">${material.sourceReport?`<p class="report-context">来源逆向报告：${esc(material.sourceReport['溯源报告编码'])}</p>${materialReverseReceiptHTML(PAGES.find(x=>x.id==='material-reverse'),material.sourceReport)}`:''}${mainTables.map(t=>reportSectionHTML(current,t,m)).join('')}</div></details>`).join('')||'<div class="empty">暂无关联原料逆向报告</div>'}</div></div>`;
 }
@@ -492,10 +604,10 @@ function labelControls(){
  const selectPage=$('[data-public-select-page]'),selectable=$$('[data-public-key]:not(:disabled)');
  if(selectPage)selectPage.indeterminate=selectable.some(el=>el.checked)&&!selectable.every(el=>el.checked);
 } 
-function navigate(id,mode='',index=0){overviewHideRingTooltip();state.routeContext=null;if(id!==state.page){state.closedSelection=new Set();state.filters={};state.expanded=false;state.pageNo=1;state.tab=0;state.stage=0;state.editor=null;state.subQuery='';state.subPage=0;}state.overlay=null;state.page=id;state.index=index;if(mode==='detail'&&page().singleStoreReceipt)state.stage=0;state.openGroups.add(page().group);location.hash=id+(mode?'/'+mode+'/'+index:'');render();window.scrollTo(0,0)}
+function navigate(id,mode='',index=0){overviewHideRingTooltip();state.routeContext=null;if(id!==state.page){state.closedSelection=new Set();state.filters={};state.expanded=false;state.pageNo=1;state.tab=0;state.stage=0;state.editor=null;state.detailTables.clear();}state.overlay=null;state.page=id;state.index=index;if(mode==='detail'&&page().singleStoreReceipt)state.stage=0;state.openGroups.add(page().group);location.hash=id+(mode?'/'+mode+'/'+index:'');render();window.scrollTo(0,0)}
 window.addEventListener('hashchange',()=>{const [id,mode,index]=location.hash.slice(1).split('/');if(PAGES.some(p=>p.id===id)){state.page=id;state.index=Number(index)||0;if(mode==='detail'&&page().singleStoreReceipt)state.stage=0;state.openGroups.add(page().group);render()}});
 function initEditor(p,r,isNew){const key=p.id+'-'+(isNew?'new':state.index);if(state.editor?.key!==key){state.editor={key,isNew,values:{...r},readOnly:!isNew&&p.kind==='link'};state.conditions=r._conditions?structuredClone(r._conditions):[{link:'大仓存储',object:'温度记录',field:'记录温度',operator:'大于',value:'-18'}];state.stageDraft=r._stages?structuredClone(r._stages):overviewDefaultStages(p.id==='supplier-template'?'supplier':p.id==='dish-template-detail'?'dish':'material');state.components=r._components?structuredClone(r._components):[{type:'动态信息块1',title:'到货验收',config:{}},{type:'温度',title:'食材存放',config:{}},{type:'资质报告',title:'资质报告',config:{}}];state.componentIndex=0;if(p.kind==='link'&&!isNew&&!state.editor.values._fields){state.editor.values._fields=['收货记录编码','物料编码','采集温度'].map((n,i)=>({'排序':String(i+1),'字段名':n,'字段英文名':['receipt_id','material_code','temperature'][i],'字段采集说明':i===0?'系统自动生成，不可编辑':'来源系统同步','字段属性':'input','是否可编辑':'否','是否必填':'是','字段类型':i===2?'数字':'单行文本','长度限制':i===2?'10':'100','单位':i===2?'℃':'—','列表显示':'是','支持筛选':'是','现场采集':'否','是否为主键':i===0?'是':'否','是否唯一索引':i===0?'是':'否','ETL表达式':'源字段映射'}))}if(isNew){state.editor.values['配置状态']='启用';state.editor.values['模板状态']='启用';state.editor.values['环节状态']='启用';state.editor.values['告警时间']='00:00-24:00';state.editor.values['告警频率']='不限制';state.editor.values['用户组类型']='按角色'}overviewApplyEditorContext(p,state.editor);if(p.kind==='template')templateFlatDraft();if(p.kind==='alert')state.conditions=state.conditions.map(({stage,...condition})=>condition)}}
-function formHTML(fields,values,readOnly=false){return `<form id="editor-form" class="form-grid">${fields.map(f=>{const conditionalStyle=page().id==='alert-group'&&((f.name==='告警用户'&&(values['用户组类型']||'按角色')!=='按用户')||(f.name==='告警角色'&&values['用户组类型']==='按用户'))?'display:none':'';const ro=readOnly||(!state.editor?.isNew&&['模板编码','配置编码','环节编码','创建时间','创建人','版本号','菜品名称'].includes(f.name));return `<div class="field ${/说明|备注/.test(f.name)?'wide':''}" style="${conditionalStyle}"><label>${!ro&&/^(模板名称|环节名称|配置名称|门店名称|库存地点名称|角色名称|角色编码|告警级别名称|告警用户组名称|文档名称)$/.test(f.name)?'<span class="required">*</span>':''}${esc(f.name)}</label>${control(f,values[f.name]||'',ro,'form')}${f.note?`<div class="note">${esc(f.note).slice(0,160)}</div>`:''}</div>`}).join('')}</form>`}
+function formHTML(fields,values,readOnly=false){return `<form id="editor-form" class="form-grid">${fields.map(f=>{const conditionalStyle=page().id==='alert-group'&&((f.name==='告警用户'&&(values['用户组类型']||'按角色')!=='按用户')||(f.name==='告警角色'&&values['用户组类型']==='按用户'))?'display:none':'';const ro=readOnly||(!state.editor?.isNew&&['模板编码','配置编码','环节编码','创建时间','创建人','版本号','菜品名称'].includes(f.name));return `<div class="field ${/说明|备注/.test(f.name)?'wide':''}" style="${conditionalStyle}"><label>${!ro&&(f.required||/^(模板名称|环节名称|配置名称|门店名称|库存地点名称|角色名称|角色编码|告警级别名称|告警用户组名称|文档名称)$/.test(f.name))?'<span class="required">*</span>':''}${esc(f.name)}</label>${control(f,values[f.name]||'',ro,'form')}${f.note?`<div class="note">${esc(f.note).slice(0,160)}</div>`:''}</div>`}).join('')}</form>`}
 function editorHTML(p,r,isNew){
  initEditor(p,r,isNew);const e=state.editor,editable=isNew||!e.readOnly;
  const title=(isNew?'新增':'详情 · ')+p.name;
@@ -615,7 +727,7 @@ function openOverlay(title,body,footer='',type='dialog',task='',meta={}){state.o
 function renderOverlay(){const o=state.overlay;if(!o)return;let body=o.task==='report-materials'?reportConstituentsHTML(o):o.task==='trace-definition'?traceDefinitionHTML(o):o.task==='material-batch'?materialBatchHTML(o):o.task==='report-qualifications'?reportQualificationHTML():o.task==='detail'?generalDetail(page(),row()):o.task==='report-child'?reportChildOverlayHTML(o):o.task==='template-associations'?templateAssociationModalHTML(o):o.task==='template-link-import'?templateImportModalHTML(o):o.task==='template-table-structure'?templateStructureModalHTML(o):o.body;const parent=o.returnOverlay;const behind=parent?overlayMarkup(parent,parent.task==='detail'?generalDetail(page(),row()):parent.task==='material-batch'?materialBatchHTML(parent):parent.body,true):'';$('#overlay-root').innerHTML=reportDisplayHTML(behind+overlayMarkup(o,body));$$('[data-indeterminate]', $('#overlay-root')).forEach(el=>el.indeterminate=true);labelControls()}
 
 function closeOverlay(){const o=state.overlay;if(o?.returnOverlay){state.overlay=o.returnOverlay;renderOverlay();if(o.returnCardIndex!=null)$('[data-act=trace-card-view][data-num="'+o.returnCardIndex+'"]')?.focus();return}state.overlay=null;$('#overlay-root').innerHTML=''}
-function detailOverlay(index,tab=0){state.index=index;state.tab=tab;state.subQuery='';state.subPage=0;openOverlay(page().name+'详情','',page().id==='complaint'?btn('食安事件发送','complaint-open','primary')+btn('关闭','close-overlay','plain'):page().kind==='editable'?btn('编辑','overlay-edit','primary')+btn('关闭','close-overlay','plain'):'','drawer','detail')}
+function detailOverlay(index,tab=0){state.index=index;state.tab=tab;state.detailTables.clear();openOverlay(page().name+'详情','',page().id==='complaint'?btn('食安事件发送','complaint-open','primary')+btn('关闭','close-overlay','plain'):page().kind==='editable'?btn('编辑','overlay-edit','primary')+btn('关闭','close-overlay','plain'):'','drawer','detail')}
 function quickTable(title,fields,rows,task=''){openOverlay(title,tableHTML(page(),rows,fields.map(name=>({name}))),btn('关闭','close-overlay','plain'),'drawer',task)}
 function attach(name='附件'){openOverlay('附件预览',`<div class="attachment-preview">${icon('file')}<h3>${esc(name)}</h3><p>原型演示预览</p><p>源附件尚未接入。选择本地文件后可预览实际内容。</p><input id="preview-upload" type="file" accept=".pdf,image/*,.txt"></div>`,btn('关闭','close-overlay','plain'))}
 function editModal(p,isNew=false){state.editor={key:p.id+'-modal',isNew,values:isNew?{}:{...row()}};openOverlay((isNew?'新增':'编辑')+p.name,formHTML(p.form.length?p.form:p.columns.filter(f=>f.name!=='操作'),state.editor.values),btn('保存','save-modal','primary')+btn('取消','close-overlay','plain'),'dialog','edit')}
@@ -637,7 +749,31 @@ function validate(values,p,publish=false){
  if(publish&&p.kind==='template'&&records(p).some((r,i)=>(state.editor.isNew||i!==state.index)&&r['状态']==='启用'&&r['溯源原料范围']===values['溯源原料范围']&&(p.kind!=='supplier-template'||r['供应商范围']===values['供应商范围']))){toast('所选原料范围已有启用模板，请调整覆盖范围');return false}
  return true;
 }
-function saveEditor(p,publish=false,modal=false){const context=state.routeContext;const values={...(state.editor?.values||{}),...formValues()};if(!validate(values,p,publish))return;
+function commitKitchens(records,message){
+ try{localStorage.setItem('lxj-prototype-v1',JSON.stringify({...dataStore,kitchen:records}));}
+ catch{toast('当前浏览器无法保存央厨信息，请重试');return}
+ dataStore.kitchen=records;
+ state.editor=null;
+ closeOverlay();
+ render();
+ toast(message);
+}
+function saveKitchen(p,values){
+ const id=values['央厨ID'].trim(),name=values['央厨名称'].trim();
+ if(!id||!name){toast('请填写央厨ID和央厨名称');return}
+ const rows=records(p),isNew=state.editor.isNew,previous=isNew?null:rows.find(r=>r._key===values._key);
+ if(!isNew&&!previous){toast('该央厨信息已不存在');return}
+ if(rows.some(r=>r!==previous&&r['央厨ID']===id)){toast('央厨ID已存在');return}
+ const timestamp=new Date().toLocaleString('sv-SE',{timeZone:'Asia/Shanghai'}),operator='食安管理员';
+ const next={
+  _key:previous?._key??('kitchen-'+crypto.randomUUID()),'央厨ID':id,'央厨名称':name,
+  '创建人':previous?.['创建人']??operator,'创建时间':previous?.['创建时间']??timestamp,
+  '更新人':operator,'更新时间':timestamp
+ };
+ const updated=previous?rows.map(r=>r===previous?next:r):[next,...rows];
+ commitKitchens(updated.sort((a,b)=>b['更新时间'].localeCompare(a['更新时间'])),'保存成功');
+}
+function saveEditor(p,publish=false,modal=false){const context=state.routeContext;const values={...(state.editor?.values||{}),...formValues()};if(p.id==='kitchen'){saveKitchen(p,values);return}if(!validate(values,p,publish))return;
  if(p.kind==='template'){if(!validateTemplateRoles())return;values._stages=structuredClone(state.stageDraft);}
  if(p.kind==='alert'){values._conditions=state.conditions.map(({stage,...condition})=>structuredClone(condition));delete values['告警阶段'];values['创建人']=state.editor.isNew?'食安管理员':row()['创建人'];values['创建时间']=state.editor.isNew?new Date().toLocaleString('sv-SE'):row()['创建时间'];values['配置编码']||='AC'+Date.now();values['告警配置编码']=values['配置编码'];}
  if(['consumer','consumer-link'].includes(p.kind))values._components=structuredClone(state.components);
@@ -702,7 +838,7 @@ document.addEventListener('change',e=>{
 });
 
 
-function rowAction(label,index){const p=page();state.index=index;state.tab=0;state.subPage=0;state.subQuery='';
+function rowAction(label,index){const p=page();state.index=index;state.tab=0;state.detailTables.clear();
  if(['role','user'].includes(p.id)&&['查看授权记录','查看变更记录'].includes(label)){showPermissionHistory();return}
  if(p.id==='overview'&&label==='溯源环节定义'){return}
  if(p.id==='complaint'&&label==='食安事件发送'){openComplaintEvent();return}
@@ -728,7 +864,12 @@ function rowAction(label,index){const p=page();state.index=index;state.tab=0;sta
  if(label==='关闭溯源报告'){openPublicClose([row()._key]);return}
  if(label==='二维码'&&row()['报告状态']==='已关闭'){toast('报告已关闭，消费者不可查看');return}
  if(label==='二维码'){openOverlay('报告二维码','<div class="empty">小程序入口待配置</div><p class="note">PRD 中二维码方式待小程序方案确认；配置入口前不生成无效二维码。</p>',btn('关闭','close-overlay','plain'));return}
- if(label==='下载'){toast('源附件尚未接入，请上传本地文件后下载');return}if(label==='删除'){openOverlay('删除文档',`<p>确认删除“${esc(row()['文档名称'])}”？</p>`,btn('删除','delete-record','danger')+btn('取消','close-overlay','plain'));return}
+ if(label==='下载'){toast('源附件尚未接入，请上传本地文件后下载');return}if(label==='删除'&&p.id==='kitchen'){
+  const kitchen=row();
+  if(kitchen)openOverlay('删除央厨信息',`<p>确认删除「${esc(kitchen['央厨名称'])}」（${esc(kitchen['央厨ID'])}）？</p>`,btn('取消','close-overlay','plain')+btn('删除','kitchen-delete','danger'),'dialog','kitchen-delete',{recordKey:kitchen._key});
+  return;
+ }
+ if(label==='删除'){openOverlay('删除文档',`<p>确认删除“${esc(row()['文档名称'])}”？</p>`,btn('删除','delete-record','danger')+btn('取消','close-overlay','plain'));return}
  attach(label);
 }
 function rememberEditor(){if(state.editor)state.editor.values={...state.editor.values,...formValues()}}
@@ -744,8 +885,7 @@ function doSearch(){if(page().id==='public-report')state.closedSelection=new Set
 document.addEventListener('click',e=>{
  const el=e.target.closest('[data-act]');if(!el)return;const act=el.dataset.act,p=page(),num=Number(el.dataset.num)||0;
  if(act==='report-materials'){e.preventDefault();if(el.dataset.index!=null)state.index=Number(el.dataset.index);openReportConstituents();return}
- if(act==='constituents-search'||act==='constituents-reset'){const o=state.overlay;if(o?.task!=='report-materials')return;o.query=act==='constituents-reset'?'':$('#constituents-query').value.trim();o.pageNo=0;renderOverlay();return}
- if(act==='constituents-prev'||act==='constituents-next'){const o=state.overlay;if(o?.task!=='report-materials')return;const max=Math.max(0,Math.ceil(filteredConstituents(o).length/10)-1);o.pageNo=Math.max(0,Math.min(max,o.pageNo+(act==='constituents-next'?1:-1)));renderOverlay();return}
+ if(act==='constituents-search'||act==='constituents-reset'){const o=state.overlay;if(o?.task!=='report-materials')return;o.query=act==='constituents-reset'?'':$('#constituents-query').value.trim();o.pageNo=1;renderDetailTable(el);return}
  if(act==='constituents-export'){const o=state.overlay,rows=filteredConstituents(o),headers=reportConstituentFields();if(!rows.length){toast('暂无可导出的数据');return}download(reportCSV({headers,rows:rows.map(r=>headers.map(f=>r[f]))}),'构成原料说明.csv');return}
  if(act==='template-roles-save'){saveTemplateRoleDefinitions();return}
  if(act==='trace-definition-open'){return}
@@ -774,16 +914,29 @@ document.addEventListener('click',e=>{
  if(act==='nav'){navigate(el.dataset.page);return}if(act==='nav-group'){state.openGroups.has(el.dataset.group)?state.openGroups.delete(el.dataset.group):state.openGroups.add(el.dataset.group);render();return}
  if(act==='search'){e.preventDefault();doSearch();return}if(act==='reset'){if(p.id==='public-report')state.closedSelection=new Set();state.filters={};state.pageNo=1;render();return}if(act==='expand'){if(p.id==='public-report')state.closedSelection=new Set();state.filters={...state.filters};$$('[data-field]',$('#filters-form')).forEach(x=>{if(x.dataset.part){state.filters[x.dataset.field]||={};state.filters[x.dataset.field][x.dataset.part]=x.value}else state.filters[x.dataset.field]=x.value});state.expanded=!state.expanded;render();return}
  if(act==='refresh'){render();toast('演示数据已刷新，查询条件已保留');return}
- if(act==='prev-page'||act==='next-page'||act==='go-page'){state.pageNo=act==='go-page'?num:state.pageNo+(act==='next-page'?1:-1);render();return}
+ if(act==='go-page'){updatePagination(el,num);return}
  if(act==='back'){const ctx=state.routeContext;state.editor=null;if(ctx?.page===p.id){navigate('overview','detail',ctx.overviewIndex||0);return}navigate(p.id);return}if(act==='close-overlay'){closeOverlay();return}
  if(act==='select-template'){state.templateChoice=Number(el.value);return}
  if(act==='more-actions'){state.index=Number(el.dataset.index)||0;openOverlay('操作',`<div class="scope-list">${p.uiActions.map(a=>btn(a,'row-action','text',`data-index="${state.index}" data-label="${esc(a)}"`)).join('')}</div>`,btn('取消','close-overlay','plain'));return}
  if(act==='row-action'){closeOverlay();rowAction(el.dataset.label,Number(el.dataset.index)||0);return}
- if(act==='tab'){state.tab=num;state.subQuery='';state.subPage=0;render();return}if(act==='sub-search'){state.subQuery=$('#sub-query')?.value||'';state.subPage=0;render();return}if(act==='sub-reset'){state.subQuery='';state.subPage=0;render();return}if(act==='sub-prev'||act==='sub-next'){state.subPage=(state.subPage||0)+(act==='sub-next'?1:-1);render();return}
+ if(act==='tab'){state.tab=num;render();return}
+ if(act==='sub-search'||act==='sub-reset'){
+  const filter=el.closest('[data-detail-table]'),view=tableView(state.detailTables,filter.dataset.detailTable);
+  view.query=act==='sub-reset'?'':$('.sub-query',filter).value.trim();
+  view.pageNo=1;
+  renderDetailTable(el);
+  return;
+ }
  if(act==='public-material'){state.publicMaterial=num;render();toast('已切换原料：'+materialNames[num]);return}
  if(act==='report-anchor'){const target=$('#report-table-0-'+num);if(target){let parent=target.parentElement;while(parent){if(parent.tagName==='DETAILS')parent.open=true;parent=parent.parentElement}target.scrollIntoView({behavior:'smooth',block:'start'});}return}
- if(act==='report-search'||act==='report-reset'){const filter=el.closest('[data-report-key]'),key=filter.dataset.reportKey;state.reportQueries||={};state.reportDates||={};state.reportPages||={};state.reportQueries[key]=act==='report-reset'?'':$('.report-query',filter).value.trim();state.reportDates[key]=act==='report-reset'?{}:{start:$('.report-date-start',filter)?.value||'',end:$('.report-date-end',filter)?.value||''};state.reportPages[key]=0;render();return}
- if(act==='report-prev'||act==='report-next'){const key=el.closest('[data-report-key]').dataset.reportKey;state.reportPages||={};state.reportPages[key]=Math.max(0,(state.reportPages[key]||0)+(act==='report-next'?1:-1));render();return}
+ if(act==='report-search'||act==='report-reset'){
+  const filter=el.closest('[data-report-key]'),view=tableView(state.reportTables,filter.dataset.reportKey);
+  view.query=act==='report-reset'?'':$('.report-query',filter).value.trim();
+  view.date=act==='report-reset'?{}:{start:$('.report-date-start',filter)?.value||'',end:$('.report-date-end',filter)?.value||''};
+  view.pageNo=1;
+  renderDetailTable(el);
+  return;
+ }
  if(act==='report-child-record'){const link=reportLinks()[state.stage],table=link.tables.find(t=>t.id===el.dataset.table),material=Number(el.dataset.material)||0,recordIndex=Number(el.dataset.record)||0;openOverlay(table.name+' · 关联明细','',btn('关闭','close-overlay','plain'),'drawer','report-child',{tableId:table.id,material,recordIndex});return}
  if(act==='report-attachment'){attach(el.dataset.name||'附件');return}
 
@@ -849,6 +1002,10 @@ document.addEventListener('click',e=>{
  if(act==='permission-preview'){reviewPermissions();return}
  if(act==='permission-save'){savePermissions();return}
  if(act==='rebuild-save'){if(!$('#rebuild-reason').value.trim()){toast('请填写重建原因');return}if(row()['运行状态']==='构建中'){toast('同一范围已有执行中的任务');return}row()['运行状态']='构建中';row()._task={reason:$('#rebuild-reason').value,scope:$('#rebuild-scope').value};persist();closeOverlay();render();toast('演示重建任务已创建');return}
+ if(act==='kitchen-delete'&&state.overlay?.task==='kitchen-delete'){
+  commitKitchens(records(p).filter(r=>r._key!==state.overlay.recordKey),'央厨信息已删除');
+  return;
+ }
  if(act==='delete-record'){records(p).splice(state.index,1);persist();closeOverlay();render();toast('文档已删除');return}
  if(act==='external'){toast('外部系统地址待客户提供');return}
  if(act==='batch-import'){openOverlay('批量添加库存地点',`<p class="note">下载模板、填写库存地点后上传CSV。必填门店编码、库存地点名称和库存地点类型。</p>${btn('下载模板','batch-template','plain')}<input id="batch-file" type="file" accept=".csv" style="margin-top:20px"><div id="batch-result"></div>`,btn('导入','batch-save','primary')+btn('取消','close-overlay','plain'));return}
@@ -872,10 +1029,17 @@ document.addEventListener('change',async e=>{const el=e.target,o=state.overlay;
  if(el.hasAttribute('data-import-select-page')&&o?.task==='template-link-import'){if(!o.readonly){templateImportFiltered(o).slice(o.pageNo*o.size,(o.pageNo+1)*o.size).forEach(r=>el.checked?o.selected.add(r.id):o.selected.delete(r.id));renderOverlay();}return}
  if(el.hasAttribute('data-template-page-size')){o.size=Number(el.value);o.pageNo=0;renderOverlay();return}
  if(el.hasAttribute('data-template-jump')){const total=o.task==='template-link-import'?templateImportFiltered(o).length:o.rows.filter(r=>(!o.codeQuery||r.code===o.codeQuery)&&(!o.nameQuery||r.name.includes(o.nameQuery))).length;o.pageNo=Math.max(0,Math.min((Number(el.value)||1)-1,Math.max(0,Math.ceil(total/o.size)-1)));renderOverlay();return}
- if(el.dataset.act==='page-size'){state.size=Number(el.value);state.pageNo=1;render()}
- if(el.dataset.act==='jump-page'){state.pageNo=Math.max(1,Math.min(Number(el.value)||1,Math.ceil(filteredRows(page()).length/state.size)));render()}
+ if(el.dataset.act==='page-size'){updatePagination(el,1,Number(el.value));return}
+ if(el.dataset.act==='jump-page'){updatePagination(el,Number(el.value));return}
  if(el.name==='alert-mode'){rememberEditor();state.editor.values['告警类型']=el.value;render()}
- if(el.id==='menu-channel'){state.menuChannel=el.value;state.subQuery='';state.subPage=0;render()}
+ if(el.id==='menu-channel'){
+  state.menuChannel=el.value;
+  const view=tableView(state.detailTables,el.closest('[data-detail-table]').dataset.detailTable);
+  view.query='';
+  view.pageNo=1;
+  renderDetailTable(el);
+  return;
+ }
  if(el.name==='用户组类型'){const isRole=el.value==='按角色';$$('.field').forEach(f=>{const name=$('label',f)?.textContent;if(name==='告警角色')f.style.display=isRole?'':'none';if(name==='告警用户')f.style.display=isRole?'none':''})}
  if(el.dataset.upload){const files=Array.from(el.files);if(!files.length)return;const ty=el.dataset.upload,limit={video:100*1024*1024,cover:1024*1024,carousel:500*1024,'menu-image':200*1024,'detail-image':2*1024*1024}[ty]||10*1024*1024;if(files.some(f=>f.size>limit)||(ty==='carousel'&&files.length>8)){el.value='';toast('文件超过允许大小或数量');return}
  if(ty==='video'&&files[0].type!=='video/mp4'){toast('仅支持MP4视频');el.value='';return}
@@ -889,7 +1053,16 @@ function asDataURL(file){return new Promise((resolve,reject)=>{const f=new FileR
 function knowledgeModal(isNew){state.editor={isNew,values:isNew?{}:{...row()}};openOverlay(isNew?'上传文档':'编辑文档',formHTML([{name:'文档名称'},{name:'文档分类'},{name:'文档说明'}],state.editor.values)+`<div class="field" style="padding:0 22px 22px"><label>文件（Word / Excel / PDF / 图片，≤5MB）</label><input id="knowledge-file" type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.webp" ${isNew?'multiple':''}></div>`,btn('保存','knowledge-save','primary')+btn('取消','close-overlay','plain'),'dialog','knowledge')}
 async function saveKnowledge(){const values=formValues(),files=Array.from($('#knowledge-file').files);if(!values['文档名称']){toast('文档名称必填');return}if(state.editor.isNew&&!files.length){toast('请选择文件');return}if(files.some(f=>f.size>5*1024*1024)||files.length>10){toast('单个附件≤5MB，最多10个');return}if(!files.length){Object.assign(row(),values);persist();closeOverlay();render();toast('文档信息已保存');return}for(const f of files){const r={...values,'文档名称':files.length>1?f.name:values['文档名称'],'文件格式':f.name.split('.').pop().toUpperCase(),'文件大小':(f.size/1024).toFixed(1)+'KB','上传人':'食安管理员','上传时间':'2026-10-12 18:30:00',_file:{name:f.name,type:f.type,content:await asDataURL(f)}};if(state.editor.isNew)records(page()).unshift(r);else Object.assign(row(),r)}persist();closeOverlay();render();toast('文档已保存')}
 let dragItem=null;document.addEventListener('dragstart',e=>{const c=e.target.closest('[data-component],[data-palette]');if(!c)return;dragItem=c.dataset.palette!=null?{type:'new',index:Number(c.dataset.palette)}:{type:'move',index:Number(c.dataset.component)};e.dataTransfer.setData('text/plain',JSON.stringify(dragItem))});document.addEventListener('dragover',e=>{if(e.target.closest('#component-drop'))e.preventDefault()});document.addEventListener('drop',e=>{if(!e.target.closest('#component-drop')||!dragItem)return;e.preventDefault();rememberEditor();const dst=e.target.closest('[data-component]'),index=dst?Number(dst.dataset.component):state.components.length;if(dragItem.type==='new')state.components.splice(index,0,{type:componentTypes[dragItem.index],title:componentTypes[dragItem.index],config:{}});else{const c=state.components.splice(dragItem.index,1)[0];state.components.splice(Math.min(index,state.components.length),0,c)}state.componentIndex=Math.min(index,state.components.length-1);dragItem=null;render()});
-document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.id==='batch-material-query'){e.preventDefault();$('[data-act=material-batch-search]').click()}if(e.key==='Escape')closeOverlay();if(e.key==='Enter'&&['association-code','association-name'].includes(e.target.id)){e.preventDefault();$('[data-act="association-search"]').click()}if(e.key==='Enter'&&['import-object-name','import-link-name'].includes(e.target.id)){e.preventDefault();$('[data-act="import-link-search"]').click()}if(e.key==='Enter'&&e.target.id==='sub-query'){$('[data-act="sub-search"]').click()}});
+document.addEventListener('keydown',e=>{
+ const el=e.target;
+ if(e.key==='Escape'){closeOverlay();return}
+ if(e.key!=='Enter')return;
+ if(el.id==='batch-material-query'){e.preventDefault();$('[data-act=material-batch-search]').click()}
+ if(['association-code','association-name'].includes(el.id)){e.preventDefault();$('[data-act="association-search"]').click()}
+ if(['import-object-name','import-link-name'].includes(el.id)){e.preventDefault();$('[data-act="import-link-search"]').click()}
+ if(el.classList.contains('sub-query')){e.preventDefault();$('[data-act="sub-search"]',el.closest('[data-detail-table]')).click()}
+ if(el.dataset.act==='jump-page'){e.preventDefault();updatePagination(el,Number(el.value))}
+});
 
 function reportSummaryHTML(fields,r,title='报告概要',visibleCount=4){
  if(title==='报告概要'&&['report','consumer-report'].includes(page().kind)){
@@ -901,44 +1074,56 @@ function reportSummaryHTML(fields,r,title='报告概要',visibleCount=4){
  return `<section class="panel report-summary"><div class="section-title">${title}<span class="right muted">${fields.length} 项信息</span></div>${infoHTML(fields.slice(0,visibleCount),r)}<details><summary>展开完整概要</summary>${infoHTML(fields.slice(visibleCount),r)}</details></section>`;
 }
 function reportRecords(t,materialIndex=0,parentPath=[]){
+ const sourceRecords=sourceTraceRecords(t,materialIndex,parentPath);
+ if(sourceRecords!==null)return sourceRecords;
  const sourceId=t.id.replace(/^kitchen_/,''),base=baseReportRecords({...t,id:sourceId},materialIndex),isMain=t.type.startsWith('1-');
- const count=isMain?(page().id==='forward'&&sourceId!=='tb_kitchenProduction'?3:1):isReverseReport()&&['stb_storeReceiptDetail','stb_deliveryRoute'].includes(sourceId)?1:4;
+ const count=isMain?(page().id==='forward'&&sourceId!=='tb_kitchenProduction'?3:1):sourceId==='stb_storeRsecvRecord'||isReverseReport()&&sourceId==='stb_routeRecord'?1:4;
  const pathCode=parentPath.map(i=>i+1).join('-')||'root';
  return Array.from({length:count},(_,i)=>{
   const original=base[i%base.length],values={...original.values},suffix=pathCode+'-'+(i+1),forward=page().id==='forward';let parentRecordKey=null;
   for(const f of reportVisibleFields(t)){
    if(!isReverseReport()&&(/^(id|guid)$/.test(f.key)||f.isPrimary))values[f.key]=sourceId+'-'+materialIndex+'-'+suffix;
    if(forward&&/单号|单据编号/.test(f.name)&&!/采购订单/.test(f.name))values[f.key]=String(values[f.key]).replace(/-R\d+.*$/,'')+'-R'+suffix;
-   if(forward&&/^(warehouseCode|factoryCode|dc_code)$/.test(f.key))values[f.key]='WH'+String((parentPath[0]??i)+1).padStart(3,'0');
-   if(forward&&/^(factoryName|warehouseName)$/.test(f.key))values[f.key]=(sourceId==='tb_kitchenProduction'?['合肥中央厨房','南京中央厨房','上海中央厨房']:['合肥仓储中心','南京仓储中心','上海仓储中心'])[(parentPath[0]??i)%3];
-   if(forward&&f.key==='factoryId')values[f.key]='CK'+String((parentPath[0]??i)+1).padStart(3,'0');
-   if(forward&&f.key==='store_code')values[f.key]='51'+(41+(parentPath[0]??i)%3);
+   if(forward&&/^(warehouseCode|dcCode)$/.test(f.key))values[f.key]='WH'+String((parentPath[0]??i)+1).padStart(3,'0');
+   if(forward&&['storeCode','sapStoreCode','consigneeUnitCode'].includes(f.key))values[f.key]='51'+(41+(parentPath[0]??i)%3);
+   if(forward&&f.key==='consigneeUnitName')values[f.key]=storeNames[(parentPath[0]??i)%3];
   }
   // Distinct business documents share the material batch; related tables inherit the selected document.
   if(forward){
    const branch=String((parentPath[0]??i)+1).padStart(3,'0');
-   if(sourceId==='tb_whReceiptRecord'||sourceId==='tb_whOutboundRecord'){
-    const receiptSuffix=sourceId==='tb_whReceiptRecord'&&parentPath.length?branch+'-'+(i+1):branch;
+   if(sourceId==='tb_whAcceptRecord'){
+    const receiptSuffix=t.parent?branch+'-'+(i+1):branch;
     values.receiptId='RID'+receiptSuffix;values.receiptDetailId='RLINE'+receiptSuffix;values.receiptCode='RK20260928-'+receiptSuffix;
    }
    if(sourceId==='tb_whOutboundRecord'){values.shipmentId='SID'+branch;values.shipmentDetailId='SLINE'+branch;values.shipmentCode='CK20260928-'+branch;}
+   if(sourceId==='tb_distRecord'){
+    values.departCode='FC20260928-'+branch;values.taskId='TMS'+branch;
+   }
+   if(sourceId==='tb_storeRecvRecord')values.purchaseCode='SH20260928-'+branch;
+   if(sourceId==='stb_materialReceipt')values.billNumber='YC-RK'+branch+'-'+(i+1);
   }
   // Resolve child foreign keys from the selected parent record, including nested receipt inspection.
   if(parentPath.length){
    const link=reportLinks(page(),true).find(l=>l.tables.some(x=>x.id===t.id)),pt=link?.tables.find(x=>x.id===t.parent);
    if(pt){const pr=reportRecords(pt,materialIndex,parentPath.slice(0,-1))[parentPath.at(-1)];
     if(pr){parentRecordKey=pr._recordKey;const pv=pr.values;
-     for(const k of ['purchase_code','store_code','deliveryOrderNo','delivery_order_no','receiptCode','receiptId','shipmentId','productionOrderNo'])if(k in values&&k in pv)values[k]=pv[k];
-     if('workOrderNo' in values&&pv.productionOrderNo)values.workOrderNo=pv.productionOrderNo;
-     if('receiptId' in values&&pv.receiptId)values.receiptId=pv.receiptId;
-     if('warehouseCode' in values&&pv.warehouseCode)values.warehouseCode=pv.warehouseCode;
-     if('dataIdOrCode' in values&&pv.id)values.dataIdOrCode=pv.id;
-     if('dataHeaderIdOrCode' in values&&pv.receiptId)values.dataHeaderIdOrCode=pv.receiptId;
-     if('tableName' in values)values.tableName=pt.id.replace(/^kitchen_/,'');
-     if('receiptCode' in values&&pv.receiptCode)values.receiptCode=pv.receiptCode;
+     const shared=['billNumber','purchaseCode','storeCode','sapStoreCode','purchaseOrderNo','receiptCode','receiptId',
+      'shipmentId','productionOrderNo','factoryCode','factoryName','warehouseCode','locationCode','departCode','taskId',
+      'orderId','orderDetailId','lineNo','itemCode','itemName','lot','shipFromCode','shipFromName','vendorCode','carNumber',
+      'driverName','supplyAbilityId'];
+     for(const k of shared)if(k in values&&k in pv)values[k]=pv[k];
+     if(sourceId==='stb_materialReceipt_detail'){
+      const order=link.tables.find(table=>table.id===pt.parent);
+      values.productionOrderNo=reportRecords(order,materialIndex)[parentPath[0]]?.values.productionOrderNo??'—';
+     }
+     if('purchaseOrderNo' in values&&pv.purchaseOrdeNo)values.purchaseOrderNo=pv.purchaseOrdeNo;
+     if('supplierNum' in values&&pv.shipFromCode)values.supplierNum=pv.shipFromCode;
+     if('supplierName' in values&&pv.shipFromName)values.supplierName=pv.shipFromName;
+     if('purchaseOrderCode' in values&&pt.id.endsWith('tb_whAcceptRecord'))values.purchaseOrderCode=pv.code;
     }
    }
   }
+  enrichReportNames(t,values);
   return {...original,_index:i,values,_recordKey:t.id+'-'+materialIndex+'-'+suffix,_parentKey:parentRecordKey,_path:[...parentPath,i]};
  });
 }
@@ -1026,15 +1211,17 @@ document.addEventListener('focusin',e=>{if(e.target.matches('[data-overview-ring
 document.addEventListener('focusout',e=>{if(e.target.matches('[data-overview-ring]'))overviewHideRingTooltip()});
 window.addEventListener('scroll',overviewHideRingTooltip,true);
 
-function deliveryRouteMapHTML(materialIndex,record){
+function deliveryRouteMapHTML(link,materialIndex,record){
  const material=reportMaterials(page(),row())[materialIndex],source=material.sourceReport||row(),ctx=materialReverseContext(source);
  const key=page().id+':'+row()._key+':'+source._key,origin='发货仓储 '+ctx.warehouseCode,destination=ctx.storeName;
+ const task=reportTableRecords(link,link.tables.find(t=>t.id==='tb_distRecord'),materialIndex)[0]?.values||{};
+ const shipping=reportTableRecords(link,link.tables.find(t=>t.id==='stb_shippingManagement'),materialIndex)[0]?.values||{};
  const points=[[110,280],[250,280],[250,220],[410,220],[410,140],[600,140],[600,100],[840,100]];
  state.routePlayback||={};
  const model=state.routePlayback[key]||={progress:0,playing:!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches,speed:1};
- Object.assign(model,{points,origin,destination,startTime:'2026-09-28 08:00:00',endTime:ctx.receiptTime});
+ Object.assign(model,{points,origin,destination,startTime:shipping.departTime||'2026-09-28 08:00:00',endTime:task.storeArrivalTime||ctx.receiptTime});
  return `<div class="delivery-route-map" data-route-map="${esc(key)}">
-  <div class="route-map-heading"><div><h4>运输轨迹</h4><span class="muted">${esc(record.values.departCode)} · ${esc(record.values.carNumber)}</span></div><span class="route-demo-tag">演示回放</span></div>
+  <div class="route-map-heading"><div><h4>运输轨迹</h4><span class="muted">${esc(record.values.departCode)} · ${esc(task.carNumber||'—')}</span></div><span class="route-demo-tag">演示回放</span></div>
   <div class="route-endpoints"><div><span class="route-node start">起</span><div><strong>${esc(origin)}</strong><small>发车时间 ${esc(model.startTime)}</small></div></div><span class="route-direction">→</span><div><span class="route-node end">终</span><div><strong>${esc(destination)}</strong><small>到达时间 ${esc(model.endTime)}</small></div></div></div>
   <div class="route-map-canvas">
    <svg viewBox="0 0 960 380" role="img" aria-label="配送路线示意地图，从${esc(origin)}到${esc(destination)}">
@@ -1134,23 +1321,21 @@ function publicScopeMatches(r){
 // Qualification evidence is moved to the report overview; preserve its original document scope.
 function isSupplierQualification(t){return /supplierQualification/i.test(t.id)||/供应商资质/.test(t.name);}
 function reportQualificationContext(){
- const p=page(),materials=reportMaterials(p,row()),links=reportLinks(p,true),entries=[];
- for(const link of links)for(const table of link.tables.filter(isSupplierQualification)){
-  materials.forEach((material,m)=>{
-   const paths=reportInlinePaths(link,table,m);
-   paths.forEach(path=>{
-    const parent=link.tables.find(t=>t.id===table.parent),receipt=parent?reportRecords(parent,m,path.slice(0,-1))[path.at(-1)]:null;
-    reportRecords(table,m,path).forEach(record=>entries.push({...record,values:{...record.values,qualificationSource:link.name,qualificationMaterial:material.name+' · '+material.code,qualificationReceipt:receipt?.values.receiptCode||receipt?.values.purchase_code||'—'}}));
-   });
-  });
+ const links=reportLinks(page(),true),materials=reportMaterials(page(),row());
+ const tables=[];
+ for(const id of ['stb_suppQualInfo','stb_supplyCapabilityList']){
+  const definition=links.flatMap(l=>l.tables).find(t=>t.id===id),rows=[];
+  for(const link of links)for(const table of link.tables.filter(t=>t.id===id||t.id==='kitchen_'+id)){
+   materials.forEach((_,m)=>reportInlinePaths(link,table,m).forEach(path=>rows.push(...reportRecords(table,m,path))));
+  }
+  tables.push({...definition,id:'summary_'+id,parent:null,_summaryRecords:rows});
  }
- const original=links.flatMap(l=>l.tables).find(isSupplierQualification);
- const extra=(key,name)=>({key,name,visible:true,attribute:'文本',description:'原报告关联信息'});
- const table={...(original||{}),id:'summary_supplierQualification',name:'供应商资质',parent:null,type:'2-子表',fields:[extra('qualificationSource','来源环节'),extra('qualificationMaterial','关联原料'),extra('qualificationReceipt','关联收货单'),...(original?.fields||[])],_summaryRecords:entries};
- return {table,rows:entries,link:{id:'summary_supplierQualification',name:'供应商资质',tables:[table]}};
+ return {rows:tables[0]._summaryRecords,link:{id:'summary_supplierQualification',name:'供应商资质',tables}};
 }
-function reportQualificationHTML(){const ctx=reportQualificationContext();return `<p class="note">当前原料报告关联的供应商资质，保留来源环节、原料与收货单信息。支持筛选、分页和导出。</p>${reportDataTable(ctx.link,ctx.table,0)}`;}
-
+function reportQualificationHTML(){
+ const {link}=reportQualificationContext();
+ return link.tables.map(t=>panel(t.name,`<div class="tab-body">${reportDataTable(link,t,0)}</div>`)).join('');
+}
 
 // Report constituents are resolved from the report's linked reverse records, preserving batches and receipts.
 function reportConstituentFields(){return ['原料编码','原料名称','原料批次号','实收数量','原料供应商','关联原料溯源报告']}
@@ -1163,11 +1348,11 @@ function reportConstituentRows(p,r,linkedDish=p.id==='public-report'?consumerLin
   return {'原料编码':ctx.materialCode,'原料名称':ctx.materialName,'原料批次号':ctx.batchCode,'实收数量':source['实收数量']??ctx.quantity,'原料供应商':supplier,'供应商编码':ctx.supplierCode,'门店收货时间':ctx.receiptTime,'关联原料溯源报告':source['溯源报告编码'],_sourceKey:source._key,_index:all.indexOf(source)};
  });
 }
-function openReportConstituents(){openOverlay('构成原料说明','',btn('关闭','close-overlay','plain'),'dialog report-record-dialog','report-materials',{rows:reportConstituentRows(page(),row()),query:'',pageNo:0})}
+function openReportConstituents(){openOverlay('构成原料说明','',btn('关闭','close-overlay','plain'),'dialog report-record-dialog','report-materials',{rows:reportConstituentRows(page(),row()),query:'',pageNo:1,size:10})}
 function filteredConstituents(o){return o.rows.filter(r=>!o.query||reportConstituentFields().some(f=>String(r[f]??'').includes(o.query)))}
 function reportConstituentsHTML(o){
- const all=filteredConstituents(o),max=Math.max(0,Math.ceil(all.length/10)-1);o.pageNo=Math.min(o.pageNo,max);const rows=all.slice(o.pageNo*10,o.pageNo*10+10),fields=reportConstituentFields();
- return `<p class="note">按当前报告关联的原料收货记录展示，同一原料的不同批次或收货记录分别保留。点击报告编码可在新标签页查看对应原料逆向报告。</p><div class="sub-filter"><input id="constituents-query" aria-label="查询构成原料" value="${esc(o.query)}" placeholder="原料编码 / 名称 / 批次 / 供应商 / 报告编码">${btn('搜索','constituents-search','primary')}${btn('重置','constituents-reset','info')}<span class="right">${btn('导出','constituents-export','plain')}</span></div><div class="table-scroll"><table class="data-table report-constituents"><thead><tr>${fields.map(f=>`<th>${f}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr>${fields.map(f=>`<td>${f==='关联原料溯源报告'?`<a class="text code" href="${esc(reportConstituentHref(r._index))}" target="_blank" rel="noopener">${esc(r[f])}</a>`:esc(r[f])}</td>`).join('')}</tr>`).join('')||'<tr><td colspan="6" class="empty">暂无关联原料记录</td></tr>'}</tbody></table></div><div class="pagination"><span class="total">共 ${all.length} 条记录 · 第 ${o.pageNo+1} / ${max+1} 页</span>${btn('上一页','constituents-prev','',o.pageNo===0?'disabled':'')}${btn('下一页','constituents-next','',o.pageNo>=max?'disabled':'')}</div>`;
+ const all=filteredConstituents(o),rows=pageRows(all,o),fields=reportConstituentFields();
+ return `<p class="note">按当前报告关联的原料收货记录展示，同一原料的不同批次或收货记录分别保留。点击报告编码可在新标签页查看对应原料逆向报告。</p><div class="sub-filter"><input id="constituents-query" aria-label="查询构成原料" value="${esc(o.query)}" placeholder="原料编码 / 名称 / 批次 / 供应商 / 报告编码">${btn('搜索','constituents-search','primary')}${btn('重置','constituents-reset','info')}<span class="right">${btn('导出','constituents-export','plain')}</span></div><div class="table-scroll"><table class="data-table report-constituents"><thead><tr>${fields.map(f=>`<th>${f}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr>${fields.map(f=>`<td>${f==='关联原料溯源报告'?`<a class="text code" href="${esc(reportConstituentHref(r._index))}" target="_blank" rel="noopener">${esc(r[f])}</a>`:esc(r[f])}</td>`).join('')}</tr>`).join('')||`<tr><td colspan="${fields.length}" class="empty">暂无关联原料记录</td></tr>`}</tbody></table></div>${pagination(all.length,o,'constituents')}`;
 }
 function reportConstituentHref(index){const url=new URL(location.href);url.searchParams.delete('templateContext');url.hash='material-reverse/detail/'+index;return url.href}
 function traceStageName(name){const value=templateNormalName(name).replace(/储存$/,'存储').replace(/大仓/g,'仓储');return {'到货验收':'仓储入库','门店配送':'物流配送'}[value]||value}

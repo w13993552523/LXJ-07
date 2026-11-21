@@ -7,7 +7,7 @@ const traceCardFields=[
  ['sfgm','是否转基因'],['sftjfj','是否添加防腐剂'],['yt','用途'],
  ['gysxx','供应商信息'],['ggzb','感官指标'],['lhzb','理化指标'],['wswzb','微生物指标'],
  ['status','状态'],['remark','备注'],['create_user_id','创建人ID'],['create_time','创建时间'],
- ['update_user_id','更新人ID'],['update_time','更新时间'],['deleted','删除标志'],['root_id','租户ID'],
+ ['update_user_id','更新人ID'],['update_time','更新时间'],['root_id','租户ID'],
  ['unit_id','单位ID'],['dept_id','部门ID'],['is_draft','是否草稿'],['ref_id','草稿对应正式行ID'],
  ['draft_data','草稿表单快照'],['data_state','数据状态']
 ];
@@ -43,7 +43,6 @@ function traceCardValue(key,v){
  if(v===null||v===undefined||v==='')return '—';
  if(key==='source_type')return ({manual:'手动填报',standard:'来自原料验收标准'})[v]||String(v);
  if(['sfgm','sftjfj'].includes(key))return ({1:'是',2:'否',0:'未明确'})[v]||'未明确';
- if(key==='deleted')return Number(v)===1?'已删除':'未删除';
  if(key==='is_draft')return Number(v)===1?'草稿':'正式';
  if(key==='data_state')return ({1:'正常',2:'废弃'})[v]||'未明确';
  return typeof v==='object'?JSON.stringify(v,null,2):String(v);
@@ -54,7 +53,7 @@ function traceCardJSON(card,key){
  if(!data||typeof data!=='object')return `<div data-card-field="${key}" class="trace-json-empty">暂无数据</div>`;
  const rows=Array.isArray(data)?data:[data];if(!rows.length)return `<div data-card-field="${key}" class="trace-json-empty">暂无数据</div>`;
  if(rows.some(r=>!r||typeof r!=='object'||Array.isArray(r)))return `<pre data-card-field="${key}" class="trace-json-empty">${esc(JSON.stringify(data,null,2))}</pre>`;
- const keys=[...new Set(rows.flatMap(r=>Object.keys(r)))];
+ const keys=[...new Set(rows.flatMap(r=>Object.keys(r)))].filter(key=>!isSourceDeleteField(key));
  return `<div class="table-scroll" data-card-field="${key}"><table class="data-table trace-json-table"><thead><tr>${keys.map(k=>`<th>${esc(k)}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr>${keys.map(k=>`<td>${esc(traceCardValue(k,r[k]))}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
 }
 function openTraceCard(index){
@@ -62,7 +61,7 @@ function openTraceCard(index){
  const parent=state.overlay;
  const basics=['id','source_type','standard_id','standard_release_id','wlmc','wljc','wlbm','relation_id','wlfl','status','update_time'];
  const quality=['ccyq','ysyq','cd','bzq','ysq','sfgm','sftjfj','yt','remark'];
- const meta=['create_user_id','create_time','update_user_id','deleted','root_id','unit_id','dept_id','is_draft','ref_id','data_state'];
+ const meta=['create_user_id','create_time','update_user_id','root_id','unit_id','dept_id','is_draft','ref_id','data_state'];
  const body=`<p class="note">以下为结构化溯源卡数据；示例内容仅用于原型评审。</p>${panel('基本信息',traceCardInfo(card,basics))}${panel('存储、运输与物料要求',traceCardInfo(card,quality))}${['gysxx','ggzb','lhzb','wswzb'].map(k=>panel(traceCardFields.find(f=>f[0]===k)[1],traceCardJSON(card,k))).join('')}<details class="trace-card-meta"><summary>维护信息与草稿</summary>${traceCardInfo(card,meta)}${panel('草稿表单快照',traceCardJSON(card,'draft_data'))}</details>`;
  openOverlay('溯源卡详情 · '+(index+1),body,btn('返回溯源卡列表','close-overlay','plain'),'dialog trace-card-dialog','trace-card-detail',{returnOverlay:parent,returnCardIndex:index});
 }
