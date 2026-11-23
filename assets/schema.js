@@ -5554,145 +5554,105 @@ window.PAGES = [
     ],
     "filters": [
       {
-        "name": "收货单号",
+        "name": "入库单号",
         "type": "input",
-        "default": "/",
+        "match": "精准查询"
+      },
+      {
+        "name": "仓库编码",
+        "type": "input",
         "match": "精准查询"
       },
       {
         "name": "入库单类型",
-        "type": "下拉列表",
-        "default": "/",
-        "match": "精准查询"
-      },
-      {
-        "name": "仓库名称",
         "type": "input",
-        "default": "/",
-        "match": "模糊查询"
+        "match": "精准查询"
       },
       {
         "name": "物料编码",
         "type": "input",
-        "default": "/",
-        "match": "编码精准"
+        "match": "精准查询"
       },
       {
         "name": "物料名称",
         "type": "input",
-        "default": "/",
-        "match": "名称模糊查询"
-      },
-      {
-        "name": "物料批次",
-        "type": "input",
-        "default": "/",
-        "match": "编码精准"
-      },
-      {
-        "name": "生产日期",
-        "type": "时间点",
-        "default": "/",
-        "match": "精准查询"
-      },
-      {
-        "name": "供应商",
-        "type": "下拉列表",
-        "default": "全部",
         "match": "模糊查询"
       },
       {
-        "name": "收货时间",
+        "name": "批次号",
+        "type": "input",
+        "match": "精准查询"
+      },
+      {
+        "name": "供应商编码",
+        "type": "input",
+        "match": "精准查询"
+      },
+      {
+        "name": "供应商名称",
+        "type": "input",
+        "match": "模糊查询"
+      },
+      {
+        "name": "采购订单号",
+        "type": "input",
+        "match": "精准查询"
+      },
+      {
+        "name": "收货时间区间",
         "type": "时间段",
-        "default": "/",
-        "match": "区间查询"
+        "match": "精准查询",
+        "field": "收货时间"
       }
     ],
     "columns": [
       {
-        "name": "收货单号",
-        "description": "",
-        "note": ""
+        "name": "入库单号"
       },
       {
-        "name": "仓库名称",
-        "description": "",
-        "note": ""
+        "name": "仓库编码"
       },
       {
-        "name": "入库单类型",
-        "description": "",
-        "note": ""
+        "name": "仓库名称"
       },
       {
-        "name": "质检状态",
-        "description": "",
-        "note": ""
+        "name": "入库单类型"
       },
       {
-        "name": "物料编码",
-        "description": "",
-        "note": ""
+        "name": "物料编码"
       },
       {
-        "name": "物料名称",
-        "description": "",
-        "note": ""
+        "name": "物料名称"
       },
       {
-        "name": "物料批次",
-        "description": "",
-        "note": ""
+        "name": "批次号"
       },
       {
-        "name": "生产日期",
-        "description": "",
-        "note": ""
+        "name": "生产日期"
       },
       {
-        "name": "失效日期",
-        "description": "",
-        "note": ""
+        "name": "入库数量"
       },
       {
-        "name": "供应商",
-        "description": "",
-        "note": ""
+        "name": "单位名称"
       },
       {
-        "name": "生厂商",
-        "description": "",
-        "note": ""
+        "name": "供应商编码"
       },
       {
-        "name": "收货日期",
-        "description": "",
-        "note": ""
+        "name": "供应商名称"
       },
       {
-        "name": "创建日期",
-        "description": "",
-        "note": ""
+        "name": "收货时间"
       },
       {
-        "name": "最后更新时间",
-        "description": "",
-        "note": ""
+        "name": "采购订单号"
       },
       {
-        "name": "操作",
-        "description": "",
-        "note": ""
+        "name": "更新时间"
       },
       {
-        "name": "数量",
-        "description": "",
-        "note": ""
-      },
-      {
-        "name": "采购订单号",
-        "description": "",
-        "note": ""
+        "name": "操作"
       }
     ],
     "tabs": [
@@ -5701,68 +5661,146 @@ window.PAGES = [
         "mode": "table",
         "fields": [
           {
+            "name": "已检数量"
+          },
+          {
+            "name": "货主编码"
+          },
+          {
+            "name": "创建时间"
+          },
+          {
+            "name": "创建用户"
+          },
+          {
+            "name": "内部号"
+          },
+          {
             "name": "质检单号"
           },
           {
-            "name": "质检规则"
+            "name": "质检单ID"
           },
           {
             "name": "质检方式"
           },
           {
+            "name": "处理建议"
+          },
+          {
+            "name": "抽检数量"
+          },
+          {
+            "name": "质检结果"
+          },
+          {
             "name": "质检类型"
           },
           {
-            "name": "包装"
+            "name": "货品编码"
           },
           {
-            "name": "总数"
-          },
-          {
-            "name": "抽检数"
-          },
-          {
-            "name": "已检数合格数"
-          },
-          {
-            "name": "不合格数"
-          },
-          {
-            "name": "零价值数"
-          },
-          {
-            "name": "责任采购人"
-          },
-          {
-            "name": "审核状态"
-          },
-          {
-            "name": "审核用户"
-          },
-          {
-            "name": "审核备注"
-          },
-          {
-            "name": "审核时间"
-          }
-        ],
-        "note": ""
-      },
-      {
-        "name": "随货票证",
-        "mode": "table",
-        "fields": [
-          {
-            "name": "文件名"
+            "name": "货品名称"
           },
           {
             "name": "更新时间"
           },
           {
-            "name": "预览"
+            "name": "合格数量"
+          },
+          {
+            "name": "合格率"
+          },
+          {
+            "name": "单位"
+          },
+          {
+            "name": "入库单号"
+          },
+          {
+            "name": "入库单ID"
+          },
+          {
+            "name": "送货总量"
+          },
+          {
+            "name": "二检状态"
+          },
+          {
+            "name": "不合格数量"
+          },
+          {
+            "name": "仓库编码"
+          },
+          {
+            "name": "零价值数量"
           }
         ],
-        "note": ""
+        "emptyNote": "样例未提供可关联的记录。"
+      },
+      {
+        "name": "批检附件",
+        "mode": "table",
+        "fields": [
+          {
+            "name": "入库日期"
+          },
+          {
+            "name": "创建时间"
+          },
+          {
+            "name": "创建用户"
+          },
+          {
+            "name": "附件地址"
+          },
+          {
+            "name": "工厂"
+          },
+          {
+            "name": "文件名"
+          },
+          {
+            "name": "内部号"
+          },
+          {
+            "name": "货品编码"
+          },
+          {
+            "name": "货品名称"
+          },
+          {
+            "name": "更新时间"
+          },
+          {
+            "name": "逻辑仓"
+          },
+          {
+            "name": "批号"
+          },
+          {
+            "name": "生产日期"
+          },
+          {
+            "name": "采购单号"
+          },
+          {
+            "name": "数量"
+          },
+          {
+            "name": "计量单位"
+          },
+          {
+            "name": "图片是否上传"
+          },
+          {
+            "name": "供应商编码"
+          },
+          {
+            "name": "供应商名称"
+          }
+        ],
+        "emptyNote": "样例未提供可关联的记录。"
       }
     ],
     "actions": [
@@ -5779,11 +5817,64 @@ window.PAGES = [
       "调拨、退货和冲销均保留原记录及关联方向；已生成报告须展示后续变化及数据版本，不将冲销单当成新的正向收货。",
       "待确认事项实际效期权威规则、收货与检验关联键、WMS 源状态及冲销机制、检验附件采集范围和历史数据覆盖。"
     ],
-    "description": "按收货单行展示大仓实际收货、批次、数量及批检/质检信息，为原料溯源报告生成和跨仓追溯提供可核查的业务依据。",
+    "description": "按仓储入库明细展示物料、批次、供应商及入库数量，并查看可关联的质检和批检附件记录。",
     "uiActions": [
       "查看"
     ],
-    "detailMode": "drawer"
+    "detailMode": "drawer",
+    "detailFields": [
+      {
+        "name": "生产商名称"
+      },
+      {
+        "name": "生产商编码"
+      },
+      {
+        "name": "验收方式"
+      },
+      {
+        "name": "入库日期"
+      },
+      {
+        "name": "收货用户"
+      },
+      {
+        "name": "换算单位"
+      },
+      {
+        "name": "物料保质期到期时间"
+      },
+      {
+        "name": "收货单ID"
+      },
+      {
+        "name": "库存ID"
+      },
+      {
+        "name": "包装编码"
+      },
+      {
+        "name": "入库单明细行号"
+      },
+      {
+        "name": "入库单内部号"
+      },
+      {
+        "name": "入库箱ID"
+      },
+      {
+        "name": "单位编码"
+      },
+      {
+        "name": "调出仓编码"
+      },
+      {
+        "name": "调出仓名称"
+      },
+      {
+        "name": "创建时间"
+      }
+    ]
   },
   {
     "id": "warehouse-out",
@@ -5796,114 +5887,81 @@ window.PAGES = [
     ],
     "filters": [
       {
-        "name": "配送单号",
+        "name": "出库单号",
         "type": "input",
-        "default": "/",
         "match": "精准查询"
       },
       {
-        "name": "出库仓库",
+        "name": "仓库编码",
         "type": "input",
-        "default": "/",
-        "match": "模糊查询"
-      },
-      {
-        "name": "送达方",
-        "type": "input",
-        "default": "/",
-        "match": "模糊查询"
+        "match": "精准查询"
       },
       {
         "name": "物料编码",
         "type": "input",
-        "default": "/",
         "match": "精准查询"
       },
       {
         "name": "物料名称",
         "type": "input",
-        "default": "/",
         "match": "模糊查询"
       },
       {
-        "name": "物料批次",
+        "name": "批次号",
         "type": "input",
-        "default": "/",
         "match": "精准查询"
       },
       {
-        "name": "生产日期",
+        "name": "库存状态",
+        "type": "input",
+        "match": "精准查询"
+      },
+      {
+        "name": "生产日期区间",
         "type": "时间段",
-        "default": "/",
-        "match": "闭合区间"
-      },
-      {
-        "name": "关联入库单号",
-        "type": "input",
-        "default": "/",
-        "match": "精准查询"
+        "match": "精准查询",
+        "field": "生产日期"
       }
     ],
     "columns": [
       {
-        "name": "配送单号",
-        "description": "一个门店的单一温层至少一个单号",
-        "note": ""
+        "name": "出库单号"
       },
       {
-        "name": "出库仓库",
-        "description": "",
-        "note": ""
+        "name": "仓库编码"
       },
       {
-        "name": "物料编码",
-        "description": "多个",
-        "note": ""
+        "name": "仓库名称"
       },
       {
-        "name": "物料名称",
-        "description": "多个",
-        "note": ""
+        "name": "货主编码"
       },
       {
-        "name": "物料批次",
-        "description": "多个",
-        "note": ""
+        "name": "物料编码"
       },
       {
-        "name": "送达方",
-        "description": "",
-        "note": ""
+        "name": "物料名称"
       },
       {
-        "name": "发货日期",
-        "description": "",
-        "note": ""
+        "name": "批次号"
       },
       {
-        "name": "创建日期",
-        "description": "",
-        "note": ""
+        "name": "出库数量"
       },
       {
-        "name": "最后更新时间",
-        "description": "",
-        "note": ""
+        "name": "单位"
       },
       {
-        "name": "操作",
-        "description": "",
-        "note": ""
+        "name": "库存状态"
       },
       {
-        "name": "数量",
-        "description": "",
-        "note": ""
+        "name": "生产日期"
       },
       {
-        "name": "出库类型",
-        "description": "",
-        "note": ""
+        "name": "更新时间"
+      },
+      {
+        "name": "操作"
       }
     ],
     "tabs": [
@@ -5912,7 +5970,31 @@ window.PAGES = [
         "mode": "table",
         "fields": [
           {
-            "name": "货主"
+            "name": "入库日期"
+          },
+          {
+            "name": "批次号"
+          },
+          {
+            "name": "货主编码"
+          },
+          {
+            "name": "单位"
+          },
+          {
+            "name": "创建时间"
+          },
+          {
+            "name": "创建用户"
+          },
+          {
+            "name": "失效日期"
+          },
+          {
+            "name": "出库箱内部号"
+          },
+          {
+            "name": "库存状态"
           },
           {
             "name": "物料编码"
@@ -5921,31 +6003,34 @@ window.PAGES = [
             "name": "物料名称"
           },
           {
-            "name": "数量"
+            "name": "更新时间"
           },
           {
-            "name": "单位"
-          },
-          {
-            "name": "物料批次"
+            "name": "更新用户"
           },
           {
             "name": "生产日期"
           },
           {
-            "name": "失效日期"
+            "name": "出库数量"
           },
           {
-            "name": "入库日期"
+            "name": "出库单号"
           },
           {
-            "name": "关联入库单号"
+            "name": "出库单内部行号"
           },
           {
-            "name": "入库日期"
+            "name": "出库单内部号"
+          },
+          {
+            "name": "仓库编码"
+          },
+          {
+            "name": "仓库名称"
           }
         ],
-        "note": ""
+        "emptyNote": "样例未提供可关联的记录。"
       }
     ],
     "actions": [
@@ -5960,11 +6045,37 @@ window.PAGES = [
       "可能存在无 TMS 的第三方临时配送，可依据真实门店收货与真实 WMS 出库关联，但须校验物料、批次",
       "同一原料跨仓出入库追加到既有批次链路，报告不重复生成"
     ],
-    "description": "按 WMS 出库单行展示大仓发货、生产领料、跨仓调拨等实际出库信息，向下关联运输、央厨收货及门店收货",
+    "description": "按仓储出库明细展示物料、批次、库存状态和数量，并按出库单查看同单物料。",
     "uiActions": [
       "查看"
     ],
-    "detailMode": "drawer"
+    "detailMode": "drawer",
+    "detailFields": [
+      {
+        "name": "入库日期"
+      },
+      {
+        "name": "创建时间"
+      },
+      {
+        "name": "创建用户"
+      },
+      {
+        "name": "失效日期"
+      },
+      {
+        "name": "出库箱内部号"
+      },
+      {
+        "name": "更新用户"
+      },
+      {
+        "name": "出库单内部行号"
+      },
+      {
+        "name": "出库单内部号"
+      }
+    ]
   },
   {
     "id": "kitchen",
@@ -6046,7 +6157,7 @@ window.PAGES = [
         "match": "精准查询"
       },
       {
-        "name": "需求单号",
+        "name": "央厨需求单号",
         "type": "input",
         "match": "精准查询"
       },
@@ -6061,9 +6172,9 @@ window.PAGES = [
         "match": "模糊查询"
       },
       {
-        "name": "批号",
+        "name": "物料批次",
         "type": "input",
-        "match": "模糊查询"
+        "match": "精准查询"
       },
       {
         "name": "供应商编码",
@@ -6076,9 +6187,10 @@ window.PAGES = [
         "match": "模糊查询"
       },
       {
-        "name": "收货时间段",
+        "name": "收货时间区间",
         "type": "时间段",
-        "match": "模糊查询"
+        "match": "精准查询",
+        "field": "收货时间"
       }
     ],
     "columns": [
@@ -6089,7 +6201,10 @@ window.PAGES = [
         "name": "WMS回传单号"
       },
       {
-        "name": "需求单号"
+        "name": "央厨需求单号"
+      },
+      {
+        "name": "央厨名称"
       },
       {
         "name": "物料编码"
@@ -6098,7 +6213,7 @@ window.PAGES = [
         "name": "物料名称"
       },
       {
-        "name": "批号"
+        "name": "物料批次"
       },
       {
         "name": "到货数量"
@@ -6123,6 +6238,61 @@ window.PAGES = [
       }
     ],
     "tabs": [
+      {
+        "name": "央厨收货明细",
+        "mode": "table",
+        "fields": [
+          {
+            "name": "收货单号"
+          },
+          {
+            "name": "央厨名称"
+          },
+          {
+            "name": "物料编码"
+          },
+          {
+            "name": "物料名称"
+          },
+          {
+            "name": "物料批次"
+          },
+          {
+            "name": "到货数量"
+          },
+          {
+            "name": "收货数量"
+          },
+          {
+            "name": "物料单位"
+          },
+          {
+            "name": "供应商名称"
+          },
+          {
+            "name": "供应商编码"
+          },
+          {
+            "name": "生产商名称"
+          },
+          {
+            "name": "生产商编码"
+          },
+          {
+            "name": "收货时间"
+          },
+          {
+            "name": "明细创建时间"
+          },
+          {
+            "name": "明细更新时间"
+          },
+          {
+            "name": "收货记录创建人"
+          }
+        ],
+        "emptyNote": "样例未提供可关联的记录。"
+      },
       {
         "name": "质检单主表",
         "mode": "info",
@@ -6207,7 +6377,7 @@ window.PAGES = [
     "rules": [
       "生禽按原 PRD 直接进入 MES 屠宰加工链路处理，不要求先有大仓收出库；"
     ],
-    "description": "展示央厨实际接收原料的批次及数量，关联大仓出库或直接到厂的上游来源，为生产订单投料追溯提供收货依据。",
+    "description": "展示央厨实际接收原料的批次及数量，关联仓储出库或直接到厂的上游来源，为生产订单投料追溯提供收货依据。",
     "uiActions": [
       "查看"
     ],
@@ -6215,13 +6385,22 @@ window.PAGES = [
     "detailMode": "drawer",
     "detailFields": [
       {
-        "name": "收货记录创建人"
+        "name": "央厨编码"
       },
       {
-        "name": "单据创建时间"
+        "name": "创建时间"
+      },
+      {
+        "name": "生产商名称"
+      },
+      {
+        "name": "生产商编码"
       },
       {
         "name": "明细创建时间"
+      },
+      {
+        "name": "收货记录创建人"
       }
     ]
   },
@@ -6239,6 +6418,11 @@ window.PAGES = [
         "name": "生产订单号",
         "type": "input",
         "match": "精准查询"
+      },
+      {
+        "name": "央厨名称",
+        "type": "input",
+        "match": "模糊查询"
       },
       {
         "name": "车间名称",
@@ -6261,19 +6445,23 @@ window.PAGES = [
         "match": "模糊查询"
       },
       {
-        "name": "批号",
+        "name": "成品批次号",
         "type": "input",
-        "match": "模糊查询"
+        "match": "精准查询"
       },
       {
-        "name": "生产日期时间段",
+        "name": "生产日期区间",
         "type": "时间段",
-        "match": "模糊查询"
+        "match": "精准查询",
+        "field": "生产日期"
       }
     ],
     "columns": [
       {
         "name": "生产订单号"
+      },
+      {
+        "name": "央厨名称"
       },
       {
         "name": "车间名称"
@@ -6291,22 +6479,19 @@ window.PAGES = [
         "name": "生产日期"
       },
       {
-        "name": "批号"
+        "name": "成品批次号"
       },
       {
         "name": "数量"
       },
       {
-        "name": "单位"
+        "name": "计量单位"
       },
       {
         "name": "生产开始时间"
       },
       {
         "name": "生产结束时间"
-      },
-      {
-        "name": "创建时间"
       },
       {
         "name": "更新时间"
@@ -6327,28 +6512,43 @@ window.PAGES = [
             "name": "物料编码"
           },
           {
+            "name": "央厨编码"
+          },
+          {
             "name": "物料名称"
           },
           {
             "name": "计划量"
           },
           {
-            "name": "投料量"
+            "name": "报工量汇总"
           },
           {
-            "name": "单位"
+            "name": "原料批次"
           },
           {
-            "name": "批号"
+            "name": "报工明细"
+          },
+          {
+            "name": "单位名称"
+          },
+          {
+            "name": "单位编码"
           },
           {
             "name": "供应商名称"
           },
           {
-            "name": "工单号"
+            "name": "生产商名称"
+          },
+          {
+            "name": "工单流水号"
           },
           {
             "name": "工序号"
+          },
+          {
+            "name": "实际投料量"
           },
           {
             "name": "创建时间"
@@ -6357,7 +6557,65 @@ window.PAGES = [
             "name": "更新时间"
           }
         ],
-        "note": ""
+        "emptyNote": "样例未提供可关联的记录。"
+      },
+      {
+        "name": "成品检测",
+        "mode": "table",
+        "fields": [
+          {
+            "name": "来源生产订单号"
+          },
+          {
+            "name": "检验申请单号"
+          },
+          {
+            "name": "业务类型"
+          },
+          {
+            "name": "检验结论"
+          },
+          {
+            "name": "检验时间"
+          },
+          {
+            "name": "批号"
+          },
+          {
+            "name": "物料编码"
+          },
+          {
+            "name": "物料名称"
+          },
+          {
+            "name": "序号"
+          },
+          {
+            "name": "检测项目"
+          },
+          {
+            "name": "检测分项"
+          },
+          {
+            "name": "计量单位"
+          },
+          {
+            "name": "报出值"
+          },
+          {
+            "name": "合格范围"
+          },
+          {
+            "name": "结论"
+          },
+          {
+            "name": "附件"
+          },
+          {
+            "name": "检测时间"
+          }
+        ],
+        "note": "按同一成品编码与批次核对检测记录，保留来源生产订单号。"
       },
       {
         "name": "工序报告",
@@ -6367,19 +6625,19 @@ window.PAGES = [
             "name": "生产订单号"
           },
           {
-            "name": "工单号"
+            "name": "工序"
           },
           {
-            "name": "工序号"
-          },
-          {
-            "name": "创建时间"
+            "name": "工序报告"
           },
           {
             "name": "更新时间"
+          },
+          {
+            "name": "附件地址"
           }
         ],
-        "note": ""
+        "emptyNote": "样例未提供可关联的记录。"
       }
     ],
     "actions": [
@@ -6398,7 +6656,27 @@ window.PAGES = [
     "uiActions": [
       "查看"
     ],
-    "detailMode": "drawer"
+    "detailMode": "drawer",
+    "detailFields": [
+      {
+        "name": "央厨ID"
+      },
+      {
+        "name": "央厨编码"
+      },
+      {
+        "name": "生产开始日期"
+      },
+      {
+        "name": "移动类型"
+      },
+      {
+        "name": "流水线"
+      },
+      {
+        "name": "创建时间"
+      }
+    ]
   },
   {
     "id": "driver",
@@ -6645,240 +6923,379 @@ window.PAGES = [
     ],
     "filters": [
       {
-        "name": "配送任务号",
+        "name": "运输任务号",
         "type": "input",
-        "default": "/",
         "match": "精准查询"
       },
       {
-        "name": "仓库",
+        "name": "发车单号",
         "type": "input",
-        "default": "/",
+        "match": "精准查询"
+      },
+      {
+        "name": "仓库编码",
+        "type": "input",
+        "match": "精准查询"
+      },
+      {
+        "name": "车牌号",
+        "type": "input",
+        "match": "精准查询"
+      },
+      {
+        "name": "商品编码",
+        "type": "input",
+        "match": "精准查询"
+      },
+      {
+        "name": "商品名称",
+        "type": "input",
         "match": "模糊查询"
       },
       {
-        "name": "移动类型",
+        "name": "供应商编码",
         "type": "input",
-        "default": "/",
-        "match": "模糊查询"
+        "match": "精准查询"
       },
       {
-        "name": "订单类型",
-        "type": "input",
-        "default": "/",
-        "match": "模糊查询"
-      },
-      {
-        "name": "配送日期",
+        "name": "发车时间区间",
         "type": "时间段",
-        "default": "",
-        "match": "闭合区间"
+        "match": "精准查询",
+        "field": "发车时间"
       },
       {
-        "name": "状态",
-        "type": "下拉列表",
-        "default": "全部",
+        "name": "是否温控",
+        "type": "input",
         "match": "精准查询"
       }
     ],
     "columns": [
       {
-        "name": "配送任务号",
-        "description": "",
-        "note": ""
+        "name": "运输任务号"
       },
       {
-        "name": "区域中心",
-        "description": "",
-        "note": ""
+        "name": "发车单号"
       },
       {
-        "name": "仓库",
-        "description": "",
-        "note": ""
+        "name": "仓库编码"
       },
       {
-        "name": "移动类型",
-        "description": "",
-        "note": ""
+        "name": "车牌号"
       },
       {
-        "name": "订单类型",
-        "description": "",
-        "note": ""
+        "name": "司机姓名"
       },
       {
-        "name": "配送日期",
-        "description": "",
-        "note": ""
+        "name": "商品编码"
       },
       {
-        "name": "货主",
-        "description": "",
-        "note": ""
+        "name": "商品名称"
       },
       {
-        "name": "温层",
-        "description": "",
-        "note": ""
+        "name": "商品行号"
       },
       {
-        "name": "发货时间",
-        "description": "",
-        "note": ""
+        "name": "计划数量"
       },
       {
-        "name": "送达时间",
-        "description": "",
-        "note": ""
+        "name": "实际数量"
       },
       {
-        "name": "状态",
-        "description": "",
-        "note": ""
+        "name": "签收数量"
       },
       {
-        "name": "创建日期",
-        "description": "",
-        "note": ""
+        "name": "是否温控"
       },
       {
-        "name": "最后更新时间",
-        "description": "",
-        "note": ""
+        "name": "发车时间"
       },
       {
-        "name": "操作",
-        "description": "",
-        "note": ""
+        "name": "到店时间"
       },
       {
-        "name": "配送单号（与门店收货关联）",
-        "description": "多个",
-        "note": ""
+        "name": "更新时间"
+      },
+      {
+        "name": "操作"
       }
     ],
     "tabs": [
+      {
+        "name": "配送明细",
+        "mode": "table",
+        "fields": [
+          {
+            "name": "任务ID"
+          },
+          {
+            "name": "订单ID"
+          },
+          {
+            "name": "订单明细ID"
+          },
+          {
+            "name": "商品行号"
+          },
+          {
+            "name": "商品编码"
+          },
+          {
+            "name": "计划数量"
+          },
+          {
+            "name": "实际数量"
+          },
+          {
+            "name": "签收数量"
+          },
+          {
+            "name": "揽收数量"
+          },
+          {
+            "name": "拒收数量"
+          },
+          {
+            "name": "剩货数量"
+          },
+          {
+            "name": "拦截数量"
+          },
+          {
+            "name": "已交接数"
+          },
+          {
+            "name": "单位"
+          },
+          {
+            "name": "生产日期"
+          },
+          {
+            "name": "过期日期"
+          },
+          {
+            "name": "是否温控"
+          },
+          {
+            "name": "商品名称"
+          },
+          {
+            "name": "商品类别"
+          },
+          {
+            "name": "创建时间"
+          },
+          {
+            "name": "创建用户"
+          },
+          {
+            "name": "更新时间"
+          },
+          {
+            "name": "更新用户"
+          },
+          {
+            "name": "货主编码"
+          },
+          {
+            "name": "运输方式"
+          },
+          {
+            "name": "总体积（m³）"
+          },
+          {
+            "name": "总毛重（kg）"
+          },
+          {
+            "name": "总净重（kg）"
+          }
+        ],
+        "emptyNote": "样例未提供可关联的记录。"
+      },
       {
         "name": "车辆信息",
         "mode": "info",
         "fields": [
           {
-            "name": "车辆编号"
-          },
-          {
             "name": "车牌号"
           },
           {
-            "name": "司机编号"
+            "name": "车型"
           },
           {
             "name": "司机姓名"
           },
           {
-            "name": "承运商"
+            "name": "司机电话"
           },
           {
-            "name": "车辆类型"
+            "name": "司机健康证"
           },
           {
-            "name": "跟踪设备号"
+            "name": "跟踪设备"
+          }
+        ]
+      },
+      {
+        "name": "发运管理",
+        "mode": "table",
+        "fields": [
+          {
+            "name": "发车单号"
+          },
+          {
+            "name": "创建时间"
+          },
+          {
+            "name": "配送类型"
+          },
+          {
+            "name": "发车单状态"
+          },
+          {
+            "name": "发车时间"
+          },
+          {
+            "name": "全部完成时间"
+          },
+          {
+            "name": "更新时间"
+          },
+          {
+            "name": "线路"
+          },
+          {
+            "name": "线路名称"
+          },
+          {
+            "name": "装车温度"
+          },
+          {
+            "name": "装载体积"
+          },
+          {
+            "name": "装载重量"
+          },
+          {
+            "name": "SAP发车单号"
+          },
+          {
+            "name": "发货编码"
+          },
+          {
+            "name": "温湿度设备号"
+          },
+          {
+            "name": "实装总体积"
+          },
+          {
+            "name": "实装总重量"
+          },
+          {
+            "name": "供应商编码"
+          },
+          {
+            "name": "仓库编码"
+          },
+          {
+            "name": "温层"
+          },
+          {
+            "name": "车牌号"
+          },
+          {
+            "name": "车型"
+          },
+          {
+            "name": "跟踪设备"
+          },
+          {
+            "name": "司机姓名"
+          },
+          {
+            "name": "司机电话"
+          },
+          {
+            "name": "仓库名称"
+          },
+          {
+            "name": "供应商名称"
           }
         ],
-        "note": ""
+        "note": "按发车单号关联，保留源表中有差异的装载记录。"
       },
       {
         "name": "线路信息",
         "mode": "table",
         "fields": [
           {
-            "name": "配送单号"
+            "name": "发车单号"
           },
           {
-            "name": "站点顺序"
+            "name": "GPS时间"
           },
           {
-            "name": "收货门店编码"
+            "name": "地理位置"
           },
           {
-            "name": "收货门店"
+            "name": "原始纬度"
           },
           {
-            "name": "发车时间"
+            "name": "原始经度"
           },
           {
-            "name": "送达时间"
+            "name": "配送模式"
           },
           {
-            "name": "起点纬度"
+            "name": "发车单ID"
           },
           {
-            "name": "起点经度"
+            "name": "百度纬度"
           },
           {
-            "name": "终点纬度"
+            "name": "百度经度"
           },
           {
-            "name": "终点经度"
-          },
-          {
-            "name": "配送状态"
+            "name": "创建人"
           }
         ],
-        "note": ""
+        "note": "按 GPS 时间排列。演示坐标保留三位小数。"
       },
       {
         "name": "温度信息",
         "mode": "table",
         "fields": [
           {
+            "name": "发车单号"
+          },
+          {
+            "name": "发车时间"
+          },
+          {
             "name": "设备编码"
           },
           {
-            "name": "记录时间"
+            "name": "湿度"
           },
           {
-            "name": "记录温度"
+            "name": "更新时间"
           },
           {
-            "name": "温层"
+            "name": "更新用户"
           },
           {
-            "name": "配送开始时间"
+            "name": "线路"
           },
           {
-            "name": "配送结束时间"
+            "name": "状态"
+          },
+          {
+            "name": "温度"
+          },
+          {
+            "name": "创建时间"
           }
         ],
-        "note": ""
-      },
-      {
-        "name": "装载批次",
-        "mode": "table",
-        "fields": [
-          {
-            "name": "物料编码"
-          },
-          {
-            "name": "物料名称"
-          },
-          {
-            "name": "物料批次"
-          },
-          {
-            "name": "数量"
-          },
-          {
-            "name": "单位"
-          },
-          {
-            "name": "关联出库单号"
-          },
-          {
-            "name": "关联收货单号"
-          }
-        ],
-        "note": ""
+        "emptyNote": "样例未提供可关联的记录。"
       }
     ],
     "actions": [
@@ -6894,11 +7311,94 @@ window.PAGES = [
       "第三方临时配送、私家车等没有 TMS 数据时，允许从真实收货追到真实出库，校验物料及时间；运输、线路、司机、温度等未知内容保留缺失。",
       "供应商直送、蛋库直送不要求经过大仓，按实际可用出发、运输、收货证据展示；无上游单据不强行关联最近一笔 WMS 出库"
     ],
-    "description": "展示配送任务、线路、站点、真实装卸/到达信息及运输温度，为出库到收货建立有依据的关联，并呈现非标配送和运输数据缺失。",
+    "description": "按运输任务和商品行查看配送信息，并按发车单号核对发运、线路和温度记录。",
     "uiActions": [
       "查看"
     ],
-    "detailMode": "page"
+    "detailMode": "page",
+    "detailFields": [
+      {
+        "name": "司机健康证"
+      },
+      {
+        "name": "批次号"
+      },
+      {
+        "name": "揽收数量"
+      },
+      {
+        "name": "货主编码"
+      },
+      {
+        "name": "创建时间"
+      },
+      {
+        "name": "创建用户"
+      },
+      {
+        "name": "过期日期"
+      },
+      {
+        "name": "商品类别"
+      },
+      {
+        "name": "更新用户"
+      },
+      {
+        "name": "订单明细ID"
+      },
+      {
+        "name": "订单ID"
+      },
+      {
+        "name": "生产批号"
+      },
+      {
+        "name": "生产日期"
+      },
+      {
+        "name": "拒收数量"
+      },
+      {
+        "name": "任务ID"
+      },
+      {
+        "name": "总毛重（kg）"
+      },
+      {
+        "name": "总体积（m³）"
+      },
+      {
+        "name": "供应商编码"
+      },
+      {
+        "name": "供应商名称"
+      },
+      {
+        "name": "生产商名称"
+      },
+      {
+        "name": "收货人单位编码"
+      },
+      {
+        "name": "收货人单位名称"
+      },
+      {
+        "name": "WMS出库时间"
+      },
+      {
+        "name": "满载率"
+      },
+      {
+        "name": "仓库名称"
+      },
+      {
+        "name": "配送类型"
+      },
+      {
+        "name": "发车单状态"
+      }
+    ]
   },
   {
     "id": "store",
@@ -7002,6 +7502,12 @@ window.PAGES = [
       },
       {
         "name": "门店类型编码"
+      },
+      {
+        "name": "门店纬度"
+      },
+      {
+        "name": "门店经度"
       }
     ],
     "tabs": [
@@ -7313,22 +7819,23 @@ window.PAGES = [
       {
         "name": "收货单确认状态",
         "type": "input",
-        "match": "模糊查询"
+        "match": "精准查询"
       },
       {
         "name": "送货类型",
         "type": "input",
-        "match": "模糊查询"
+        "match": "精准查询"
       },
       {
         "name": "TMS配送方式",
         "type": "input",
-        "match": "模糊查询"
+        "match": "精准查询"
       },
       {
-        "name": "收货日期时间段",
+        "name": "收货日期区间",
         "type": "时间段",
-        "match": "模糊查询"
+        "match": "精准查询",
+        "field": "收货日期"
       }
     ],
     "columns": [
@@ -7346,6 +7853,9 @@ window.PAGES = [
       },
       {
         "name": "发货仓编码"
+      },
+      {
+        "name": "发货仓名称"
       },
       {
         "name": "采购订单号"
@@ -7438,6 +7948,12 @@ window.PAGES = [
             "name": "供应商名称"
           },
           {
+            "name": "生产商编码"
+          },
+          {
+            "name": "生产商名称"
+          },
+          {
             "name": "记录标识"
           },
           {
@@ -7453,7 +7969,7 @@ window.PAGES = [
             "name": "更新时间"
           }
         ],
-        "note": ""
+        "emptyNote": "样例未提供可关联的记录。"
       }
     ],
     "actions": [
@@ -7484,28 +8000,28 @@ window.PAGES = [
         "name": "确认人工号"
       },
       {
+        "name": "创建人ID"
+      },
+      {
+        "name": "创建时间"
+      },
+      {
+        "name": "WMS配送方式"
+      },
+      {
+        "name": "记录标识"
+      },
+      {
         "name": "发货日期"
+      },
+      {
+        "name": "SAP门店编码"
       },
       {
         "name": "TMS车辆状态"
       },
       {
         "name": "TMS单据评价状态"
-      },
-      {
-        "name": "WMS配送方式"
-      },
-      {
-        "name": "SAP门店编码"
-      },
-      {
-        "name": "记录标识"
-      },
-      {
-        "name": "创建人ID"
-      },
-      {
-        "name": "创建时间"
       },
       {
         "name": "更新人ID"
@@ -7724,12 +8240,13 @@ window.PAGES = [
       {
         "name": "退货原因",
         "type": "input",
-        "match": "模糊查询"
+        "match": "精准查询"
       },
       {
-        "name": "更新时间段",
+        "name": "更新时间区间",
         "type": "时间段",
-        "match": "模糊查询"
+        "match": "精准查询",
+        "field": "更新时间"
       }
     ],
     "columns": [
@@ -7749,16 +8266,13 @@ window.PAGES = [
         "name": "退货原因"
       },
       {
-        "name": "退货单位编码"
-      },
-      {
-        "name": "实退量"
-      },
-      {
         "name": "发货仓编码"
       },
       {
         "name": "发货仓名称"
+      },
+      {
+        "name": "明细行数"
       },
       {
         "name": "门店备注"
@@ -7770,7 +8284,48 @@ window.PAGES = [
         "name": "操作"
       }
     ],
-    "tabs": [],
+    "tabs": [
+      {
+        "name": "退货明细",
+        "mode": "table",
+        "fields": [
+          {
+            "name": "退货单号"
+          },
+          {
+            "name": "门店编码"
+          },
+          {
+            "name": "门店名称"
+          },
+          {
+            "name": "退货原因编码"
+          },
+          {
+            "name": "退货原因"
+          },
+          {
+            "name": "退货单位编码"
+          },
+          {
+            "name": "实退量"
+          },
+          {
+            "name": "发货仓编码"
+          },
+          {
+            "name": "发货仓名称"
+          },
+          {
+            "name": "门店备注"
+          },
+          {
+            "name": "更新时间"
+          }
+        ],
+        "note": "按退货单位保留各行实退量。"
+      }
+    ],
     "actions": [
       {
         "name": "详情",
@@ -7780,11 +8335,12 @@ window.PAGES = [
     ],
     "form": [],
     "rules": [],
-    "description": "汇总门店退货相关可用业务凭证",
+    "description": "按退货单查看门店、退货原因和发货仓，并在详情核对各行实退数量。",
     "uiActions": [
       "查看"
     ],
-    "detailMode": "drawer"
+    "detailMode": "drawer",
+    "detailFields": []
   },
   {
     "id": "loss",
@@ -7947,12 +8503,13 @@ window.PAGES = [
       {
         "name": "状态",
         "type": "input",
-        "match": "模糊查询"
+        "match": "精准查询"
       },
       {
-        "name": "调拨时间段",
+        "name": "调拨时间区间",
         "type": "时间段",
-        "match": "模糊查询"
+        "match": "精准查询",
+        "field": "调拨时间"
       }
     ],
     "columns": [
@@ -7982,6 +8539,9 @@ window.PAGES = [
       },
       {
         "name": "创建时间"
+      },
+      {
+        "name": "明细更新时间"
       },
       {
         "name": "操作"
@@ -8020,10 +8580,13 @@ window.PAGES = [
             "name": "调拨单位名称"
           },
           {
+            "name": "记录标识"
+          },
+          {
             "name": "明细更新时间"
           }
         ],
-        "note": ""
+        "emptyNote": "样例未提供可关联的记录。"
       }
     ],
     "actions": [
@@ -8039,7 +8602,8 @@ window.PAGES = [
     "uiActions": [
       "查看"
     ],
-    "detailMode": "drawer"
+    "detailMode": "drawer",
+    "detailFields": []
   },
   {
     "id": "temperature",

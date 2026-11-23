@@ -148,7 +148,9 @@ function records(p){
  const storedRows=dataStore[p.id];
  const missingSupplierDetails=p.id==='supplier'&&storedRows?.some(r=>
   !Array.isArray(r._sourceTabs?.['供应商绩效'])||!Array.isArray(r._sourceTabs?.['生产商资质']));
- if(source&&(!storedRows?.length||!storedRows.every(r=>r._sourceSample)||missingSupplierDetails)){
+ const sourceRevision=source?.[0]?._sourceRevision;
+ const outdatedSourceRows=sourceRevision&&storedRows?.some(r=>r._sourceRevision!==sourceRevision);
+ if(source&&(!storedRows?.length||!storedRows.every(r=>r._sourceSample)||missingSupplierDetails||outdatedSourceRows)){
   dataStore[p.id]=structuredClone(source);
  }
  if(!dataStore[p.id]){
@@ -201,6 +203,7 @@ function valueCell(name,v,p,i){
  if(name==='消费者溯源开关')return switchHTML(v!=='禁用','toggle-switch',`data-index="${i}" data-field="${esc(name)}"`);
  if(name.includes('状态')||name==='是否有溯源卡'||name==='是否配置溯源模板')return status(v);
  if(v==='—'&&['营业执照','门店营业执照'].includes(name)&&['supplier','store'].includes(p.id))return '—';
+ if(v==='—'&&window.LXJ_SOURCE.pages[p.id]?.[0]?._sourceRevision&&['附件地址','附件','预览','下载'].includes(name))return '—';
  if(['预览','附件查看','查看','详情','复制','下载','健康证图片','营业执照','门店营业执照','附件地址','附件','检测附件'].includes(name))return btn(name==='下载'?'下载':'预览',name==='下载'?'download':'attachment','text',`data-name="${esc(name)}"`);
  if(/编码|单号|任务号|ID/.test(name))return `<span class="code">${esc(v)}</span>`;
  if(name==='关联物料'||name==='关联原料'||name==='适用门店')return `<button class="text" data-act="row-action" data-index="${i}" data-label="${name==='关联物料'?'关联物料':name==='适用门店'?'适用门店':'关联原料'}"><span class="truncate" title="${esc(v)}">${esc(v)}</span></button>`;
@@ -226,7 +229,8 @@ function control(f,v='',readonly=false,scope='filter'){
 function filtersHTML(p){const visible=state.expanded?p.filters:p.filters.slice(0,6);return `<section class="panel filters"><form id="filters-form"><div class="filter-grid">${visible.map(f=>`<div class="field"><label for="f-${esc(f.name)}">${esc(f.name)}</label>${control(f,state.filters[f.name]||'')}</div>`).join('')}</div><div class="filter-footer">${ibtn('搜索','search','search','primary','type="submit"')}${btn('重置','reset','info','type="button"')}${p.filters.length>6?btn(state.expanded?'收起 ∧':'展开 ∨','expand','text','type="button"'):''}<span class="hint">${p.filters.length} 项查询条件 · 按更新时间倒序</span></div></form></section>`}
 function filteredRows(p){return records(p).filter(r=>Object.entries(state.filters).every(([name,val])=>{
  if(typeof val==='object'){const aliases={'生产日期时间段':'生产日期','收货时间':'收货日期','发生日期':'损耗发生日期','更新时间':'最后更新时间'};const rangeField=name.endsWith('日期时间段')?name.slice(0,-3):name.replace(/时间段$/,'时间');
-  const n=window.LXJ_SOURCE.pages[p.id]?rangeField:name==='报告生成时间段'?'报告生成时间':name in r?name:aliases[name]||rangeField;
+  const field=p.filters.find(f=>f.name===name)?.field;
+  const n=field||(window.LXJ_SOURCE.pages[p.id]?rangeField:name==='报告生成时间段'?'报告生成时间':name in r?name:aliases[name]||rangeField);
   const date=String(r[n]||'').slice(0,10);
   return (!val.start&&!val.end)||(date!==''&&(!val.start||date>=val.start)&&(!val.end||date<=val.end));}
  if(!val)return true;
@@ -246,12 +250,17 @@ function pageRows(rows,view){
 }
 function pagination(total,{pageNo,size}=state,scope='list',key=''){
  const max=pageCount(total,size);
- const pages=Array.from({length:max},(_,i)=>i+1);
+ const start=Math.max(2,Math.min(pageNo-2,max-5));
+ const pages=max<=9?Array.from({length:max},(_,i)=>i+1):[1,...Array.from({length:5},(_,i)=>start+i),max];
+ const pageButtons=pages.map((n,i)=>{
+  const gap=i>0&&n>pages[i-1]+1?'<span class="muted" aria-hidden="true">…</span>':'';
+  return gap+btn(String(n),'go-page',pageNo===n?'primary':'',`data-num="${n}" ${pageNo===n?'aria-current="page"':''}`);
+ }).join('');
  return `<div class="pagination" data-page-scope="${scope}" data-page-key="${esc(key)}">
  <span class="total">共 ${total} 条记录</span><select aria-label="每页条数" data-act="page-size">
  ${[10,20].map(n=>`<option value="${n}" ${n===size?'selected':''}>${n} 条 / 页</option>`).join('')}</select>
  ${btn('‹','go-page','',`aria-label="上一页" data-num="${pageNo-1}" ${pageNo===1?'disabled':''}`)}
- ${pages.map(n=>btn(String(n),'go-page',pageNo===n?'primary':'',`data-num="${n}" ${pageNo===n?'aria-current="page"':''}`)).join('')}
+ ${pageButtons}
  ${btn('›','go-page','',`aria-label="下一页" data-num="${pageNo+1}" ${pageNo===max?'disabled':''}`)}
  <span>前往</span><input type="number" aria-label="跳转页码" value="${pageNo}" min="1" max="${max}" data-act="jump-page"><span>页</span></div>`;
 }
@@ -289,15 +298,18 @@ function listHTML(p){
  const add=editable?ibtn(p.kind==='knowledge'?'上传文档':'新增','new','plus','primary'):'';
  return headingHTML(p,p.name,p.description,ibtn('刷新','refresh','refresh','plain'))+
  (p.id==='knowledge'?`<section class="panel"><div class="section-title">外部平台入口</div><div class="external-links">${btn('法规知识库 · 待配置','external','plain')}${btn('风险评估 · 待配置','external','plain')}</div></section>`:'')+
- filtersHTML(p)+`<section class="panel ${p.id==='public-report'?'public-report-list':''}">${p.id==='public-report'?publicReportSelectionHTML():''}<div class="table-toolbar"><h2>${esc(p.kind==='report'?'溯源报告列表':p.name+'列表')}</h2><span class="muted">${window.LXJ_SOURCE.pages[p.id]?'按业务源表结构展示演示数据':p.kind==='report'?'按批次归集 · 仅供查看':p.kind==='readonly'?'源系统同步数据':''}</span>${add}${p.id==='consumer'?btn('评价模板配置','survey-open','plain'):''}${p.id==='dish-display'?btn('按原料批量关闭展示','material-batch-open','primary'):''}${p.id==='location'?btn('批量添加','batch-import','plain'):''}${p.kind==='template'?btn('新增版本','new-version','plain'):''}</div>${tableHTML(p,pageRows(rows,state),p.columns,true)}${pagination(rows.length)}</section><p class="note">当前展示为原型演示数据；${['readonly','report','consumer-report'].includes(p.kind)?'业务事实以源系统数据为准。':'配置操作保存在本机浏览器，可用于交互评审。'}</p>`;
+ filtersHTML(p)+`<section class="panel ${p.id==='public-report'?'public-report-list':''}">${p.id==='public-report'?publicReportSelectionHTML():''}<div class="table-toolbar"><h2>${esc(p.kind==='report'?'溯源报告列表':p.name+'列表')}</h2><span class="muted">${window.LXJ_SOURCE.pages[p.id]?'按业务源表结构展示演示数据':p.kind==='report'?'按批次归集 · 仅供查看':p.kind==='readonly'?'源系统同步数据':''}</span>${add}${p.id==='consumer'?btn('评价模板配置','survey-open','plain'):''}${p.id==='dish-display'?btn('按原料批量关闭展示','material-batch-open','primary'):''}${p.id==='location'?btn('批量添加','batch-import','plain'):''}${p.id==='warehouse'&&window.LXJ_SOURCE.warehouseStorage?btn('仓储存储记录','warehouse-storage','plain'):''}${p.kind==='template'?btn('新增版本','new-version','plain'):''}</div>${tableHTML(p,pageRows(rows,state),p.columns,true)}${pagination(rows.length)}</section><p class="note">当前展示为原型演示数据；${['readonly','report','consumer-report'].includes(p.kind)?'业务事实以源系统数据为准。':'配置操作保存在本机浏览器，可用于交互评审。'}</p>`;
 }
 function infoHTML(fields,r){return `<div class="info-grid">${fields.filter(f=>f.name!=='操作').map(f=>`<div class="info-item"><label>${esc(f.name)}</label><div class="value">${valueCell(f.name,businessFieldValue(page(),fields,r,f.name),page(),state.index)}</div></div>`).join('')}</div>`}
 function panel(title,body,tools=''){return `<section class="panel"><div class="section-title">${esc(title)}${tools?`<span class="right">${tools}</span>`:''}</div>${body}</section>`}
 function subRows(t){
  const r=row();
- if(r?._sourceSample)return r._sourceTabs?.[t.name]||[];
+ if(r?._sourceSample){
+  const reference=r._sourceDetailRefs?.[t.name];
+  return window.LXJ_SOURCE.details?.[reference]||r._sourceTabs?.[t.name]||[];
+ }
  return Array.from({length:13},(_,i)=>{let r={};t.fields.forEach(f=>r[f.name]=sample(f.name,i,page()));return r})}
-function subtableHTML(t){
+function subtableHTML(t, sourceRows){
  if(t.mode==='material-trace-card')return materialTraceCardHTML(row());
  if(t.mode==='trace-cards')return traceCardListHTML();
  if(t.mode==='dish-craft')return dishCraftHTML();
@@ -306,11 +318,17 @@ function subtableHTML(t){
  if(!t.fields.length)return `<div class="empty">${icon('empty')}<div>${row()?._sourceSample?'暂无此项演示数据':'暂无已接入数据'}</div><p class="note">${esc(t.note||'具体字段待源接口清单提供')}</p></div>`;
  if(t.mode==='info')return infoHTML(t.fields,row());
  if(t.mode==='remark')return `<div class="field"><label>食安备注</label><textarea id="food-remark">${esc(row()['食安备注']==='原型演示记录'?'':row()['食安备注']||'')}</textarea>${btn('保存','save-remark','primary')}</div>`;
- const key=page().id+'-'+state.index+'-'+t.name;
+ const key=t.records||page().id+'-'+state.index+'-'+t.name;
  const view=tableView(state.detailTables,key);
- const rows=subRows(t).filter(r=>!view.query||Object.values(r).join(' ').includes(view.query));
- return `${/温度/.test(t.name)?chartHTML():''}<div class="sub-filter" data-detail-table="${esc(key)}">${page().id==='store'&&t.name==='门店售卖菜单'?`<select id="menu-channel">${['TS01（堂食）','WX02（堂食扫码点餐）','MT03（美团外卖）','EL04（饿了么外卖）'].map(x=>`<option value="${x.slice(0,4)}" ${x.startsWith(state.menuChannel)?'selected':''}>${x}</option>`).join('')}</select>`:''}<input class="sub-query" aria-label="筛选${esc(t.name)}" placeholder="${t.name==='BOM关系'||t.name==='出库物料明细'?'物料编码 / 物料名称 / 批次':'输入关键词筛选明细'}" value="${esc(view.query)}">${btn('搜索','sub-search','primary')}${btn('重置','sub-reset','info')}<span class="right muted">${t.fields.length} 个字段</span></div>
- ${tableHTML(page(),pageRows(rows,view),t.fields)}${pagination(rows.length,view,'subtable',key)}${t.note?`<p class="note">${esc(t.note)}</p>`:''}`;
+ const allRows=sourceRows??subRows(t);
+ const rows=allRows.filter(r=>!view.query||Object.values(r).join(' ').includes(view.query));
+ const note=t.note||(!allRows.length?t.emptyNote:'');
+ const showDemoChart=/温度/.test(t.name)&&sourceRows==null&&!row()?._sourceRevision;
+ return `${showDemoChart?chartHTML():''}<div class="sub-filter" data-detail-table="${esc(key)}">${page().id==='store'&&t.name==='门店售卖菜单'?`<select id="menu-channel">${['TS01（堂食）','WX02（堂食扫码点餐）','MT03（美团外卖）','EL04（饿了么外卖）'].map(x=>`<option value="${x.slice(0,4)}" ${x.startsWith(state.menuChannel)?'selected':''}>${x}</option>`).join('')}</select>`:''}<input class="sub-query" aria-label="筛选${esc(t.name)}" placeholder="${t.name==='BOM关系'||t.name==='出库物料明细'?'物料编码 / 物料名称 / 批次':'输入关键词筛选明细'}" value="${esc(view.query)}">${btn('搜索','sub-search','primary')}${btn('重置','sub-reset','info')}<span class="right muted">${t.fields.length} 个字段</span></div>
+ ${tableHTML(page(),pageRows(rows,view),t.fields)}${pagination(rows.length,view,'subtable',key)}${note?`<p class="note">${esc(note)}</p>`:''}`;
+}
+function warehouseStorageHTML(){
+ return window.LXJ_SOURCE.warehouseStorage.map(t=>panel(t.name,subtableHTML(t,window.LXJ_SOURCE.details[t.records]))).join('');
 }
 function chartHTML(){return `<svg class="chart" viewBox="0 0 760 180" role="img" aria-label="演示温度曲线，温度在零下18.4至零下17.2摄氏度之间"><path d="M50 25H730 M50 65H730 M50 105H730 M50 145H730" stroke="rgba(144,147,153,.2)"/><text x="8" y="30">−16℃</text><text x="8" y="70">−17℃</text><text x="8" y="110">−18℃</text><text x="8" y="150">−19℃</text><path d="M50 118L115 103L180 114L245 97L310 108L375 82L440 103L505 105L570 118L635 104L730 108" stroke="#008042" stroke-width="2" fill="none"/><path d="M50 105H730" stroke="#e6a23c" stroke-dasharray="5 4"/><text x="50" y="174">09:00</text><text x="245" y="174">09:30</text><text x="440" y="174">10:00</text><text x="680" y="174">10:30</text></svg>`}
 const complaintRoutes={'供应商':'供应商协同系统','中央厨房':'中央厨房管理系统','大仓':'仓储管理系统','物流配送':'物流配送系统','门店':'门店管理系统'};
@@ -727,7 +745,7 @@ function componentSettingsHTML(){const c=state.components[state.componentIndex];
 }
 function consumerReportHTML(){if(row()['报告状态']==='已关闭')return panel('消费者展示状态','<div class="empty">此溯源报告已关闭，消费者不可查看。</div>');if(!consumerVisibleMaterials().length)return panel('消费者展示状态','<div class="empty">当前菜品暂无可向消费者展示的原料信息。</div>');const comps=row()._components||[{type:'动态信息块1',title:'原料来源'},{type:'温度',title:'食材存放'},{type:'资质报告',title:'检验凭证'}];return panel('消费者页面预览',`<div class="mobile-preview"><div class="phone"><div class="phone-header">${esc(row()['菜品名称']||dishNames[0])}</div>${comps.map((c,i)=>phoneContent(c,i,true)).join('')}<p class="muted" style="text-align:center;font-size:11px">演示公开信息</p></div></div>`)+panel('熔断情况',tableHTML(page(),[{'组件名称':'配送温度','熔断字段':'记录温度','熔断条件':'有效数据行不足','熔断动作':'隐藏组件','实际值':'暂无已接入数据','配置版本':'V1.0'}],['组件名称','熔断字段','熔断条件','熔断动作','实际值','配置版本'].map(name=>({name}))))}
 function openOverlay(title,body,footer='',type='dialog',task='',meta={}){state.overlay={title,body,footer,type,task,...meta};renderOverlay()}
-function renderOverlay(){const o=state.overlay;if(!o)return;let body=o.task==='report-materials'?reportConstituentsHTML(o):o.task==='trace-definition'?traceDefinitionHTML(o):o.task==='material-batch'?materialBatchHTML(o):o.task==='report-qualifications'?reportQualificationHTML():o.task==='detail'?generalDetail(page(),row()):o.task==='report-child'?reportChildOverlayHTML(o):o.task==='template-associations'?templateAssociationModalHTML(o):o.task==='template-link-import'?templateImportModalHTML(o):o.task==='template-table-structure'?templateStructureModalHTML(o):o.body;const parent=o.returnOverlay;const behind=parent?overlayMarkup(parent,parent.task==='detail'?generalDetail(page(),row()):parent.task==='material-batch'?materialBatchHTML(parent):parent.body,true):'';$('#overlay-root').innerHTML=reportDisplayHTML(behind+overlayMarkup(o,body));$$('[data-indeterminate]', $('#overlay-root')).forEach(el=>el.indeterminate=true);labelControls()}
+function renderOverlay(){const o=state.overlay;if(!o)return;let body=o.task==='report-materials'?reportConstituentsHTML(o):o.task==='trace-definition'?traceDefinitionHTML(o):o.task==='material-batch'?materialBatchHTML(o):o.task==='report-qualifications'?reportQualificationHTML():o.task==='detail'?generalDetail(page(),row()):o.task==='warehouse-storage'?warehouseStorageHTML():o.task==='report-child'?reportChildOverlayHTML(o):o.task==='template-associations'?templateAssociationModalHTML(o):o.task==='template-link-import'?templateImportModalHTML(o):o.task==='template-table-structure'?templateStructureModalHTML(o):o.body;const parent=o.returnOverlay;const behind=parent?overlayMarkup(parent,parent.task==='detail'?generalDetail(page(),row()):parent.task==='material-batch'?materialBatchHTML(parent):parent.body,true):'';$('#overlay-root').innerHTML=reportDisplayHTML(behind+overlayMarkup(o,body));$$('[data-indeterminate]', $('#overlay-root')).forEach(el=>el.indeterminate=true);labelControls()}
 
 function closeOverlay(){const o=state.overlay;if(o?.returnOverlay){state.overlay=o.returnOverlay;renderOverlay();if(o.returnCardIndex!=null)$('[data-act=trace-card-view][data-num="'+o.returnCardIndex+'"]')?.focus();return}state.overlay=null;$('#overlay-root').innerHTML=''}
 function detailOverlay(index,tab=0){state.index=index;state.tab=tab;state.detailTables.clear();openOverlay(page().name+'详情','',page().id==='complaint'?btn('食安事件发送','complaint-open','primary')+btn('关闭','close-overlay','plain'):page().kind==='editable'?btn('编辑','overlay-edit','primary')+btn('关闭','close-overlay','plain'):'','drawer','detail')}
@@ -916,6 +934,11 @@ document.addEventListener('click',e=>{
  if(act==='complaint-save'||act==='complaint-send'){saveComplaintEvent(act==='complaint-send');return}
  if(act==='nav'){navigate(el.dataset.page);return}if(act==='nav-group'){state.openGroups.has(el.dataset.group)?state.openGroups.delete(el.dataset.group):state.openGroups.add(el.dataset.group);render();return}
  if(act==='search'){e.preventDefault();doSearch();return}if(act==='reset'){if(p.id==='public-report')state.closedSelection=new Set();state.filters={};state.pageNo=1;render();return}if(act==='expand'){if(p.id==='public-report')state.closedSelection=new Set();state.filters={...state.filters};$$('[data-field]',$('#filters-form')).forEach(x=>{if(x.dataset.part){state.filters[x.dataset.field]||={};state.filters[x.dataset.field][x.dataset.part]=x.value}else state.filters[x.dataset.field]=x.value});state.expanded=!state.expanded;render();return}
+ if(act==='warehouse-storage'){
+  state.detailTables.clear();
+  openOverlay('仓储存储记录','',btn('关闭','close-overlay','plain'),'drawer','warehouse-storage');
+  return;
+ }
  if(act==='refresh'){render();toast('演示数据已刷新，查询条件已保留');return}
  if(act==='go-page'){updatePagination(el,num);return}
  if(act==='back'){const ctx=state.routeContext;state.editor=null;if(ctx?.page===p.id){navigate('overview','detail',ctx.overviewIndex||0);return}navigate(p.id);return}if(act==='close-overlay'){closeOverlay();return}
