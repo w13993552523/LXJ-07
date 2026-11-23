@@ -145,7 +145,10 @@ function records(p){
   }));
  }
  const source=window.LXJ_SOURCE.pages[p.id];
- if(source&&(!dataStore[p.id]?.length||!dataStore[p.id].every(r=>r._sourceSample))){
+ const storedRows=dataStore[p.id];
+ const missingSupplierDetails=p.id==='supplier'&&storedRows?.some(r=>
+  !Array.isArray(r._sourceTabs?.['供应商绩效'])||!Array.isArray(r._sourceTabs?.['生产商资质']));
+ if(source&&(!storedRows?.length||!storedRows.every(r=>r._sourceSample)||missingSupplierDetails)){
   dataStore[p.id]=structuredClone(source);
  }
  if(!dataStore[p.id]){
