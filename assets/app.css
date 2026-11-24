@@ -51,3 +51,5 @@ button.plain:disabled{background:var(--light);color:rgba(0,128,66,.4);border-col
 .material-card-fields dd{margin:5px 0 0;white-space:normal;overflow-wrap:anywhere}
 .material-card-sections .data-table td{white-space:normal;line-height:1.65}
 .material-card-sections .data-table td .truncate{white-space:normal;max-width:none}
+
+[data-list-page="mes-in"] .data-table .sticky-action{width:78px;min-width:78px}

@@ -227,21 +227,32 @@ function control(f,v='',readonly=false,scope='filter'){
  return `<input ${attr} ${readonly?'readonly':''} type="${/时间/.test(name)&&scope==='form'&&name!=='告警时间'?'datetime-local':/天数|数量|最佳赏味期/.test(name)?'number':'text'}" ${name==='配置名称'?'maxlength="20"':''} value="${esc(/时间/.test(name)&&scope==='form'&&name!=='告警时间'?String(v).replace(' ','T'):v==='—'?'':v)}" placeholder="请输入${esc(name)}" autocomplete="off">`;
 }
 function filtersHTML(p){const visible=state.expanded?p.filters:p.filters.slice(0,6);return `<section class="panel filters"><form id="filters-form"><div class="filter-grid">${visible.map(f=>`<div class="field"><label for="f-${esc(f.name)}">${esc(f.name)}</label>${control(f,state.filters[f.name]||'')}</div>`).join('')}</div><div class="filter-footer">${ibtn('搜索','search','search','primary','type="submit"')}${btn('重置','reset','info','type="button"')}${p.filters.length>6?btn(state.expanded?'收起 ∧':'展开 ∨','expand','text','type="button"'):''}<span class="hint">${p.filters.length} 项查询条件 · 按更新时间倒序</span></div></form></section>`}
-function filteredRows(p){return records(p).filter(r=>Object.entries(state.filters).every(([name,val])=>{
- if(typeof val==='object'){const aliases={'生产日期时间段':'生产日期','收货时间':'收货日期','发生日期':'损耗发生日期','更新时间':'最后更新时间'};const rangeField=name.endsWith('日期时间段')?name.slice(0,-3):name.replace(/时间段$/,'时间');
-  const field=p.filters.find(f=>f.name===name)?.field;
-  const n=field||(window.LXJ_SOURCE.pages[p.id]?rangeField:name==='报告生成时间段'?'报告生成时间':name in r?name:aliases[name]||rangeField);
-  const date=String(r[n]||'').slice(0,10);
-  return (!val.start&&!val.end)||(date!==''&&(!val.start||date>=val.start)&&(!val.end||date<=val.end));}
- if(!val)return true;
- if(p.id==='public-report'&&['原料编码','原料名称','原料批次号','供应商编码','供应商名称','关联原料报告编码'].includes(name))return publicScopeMatches(r);
- if(p.id==='reverse'&&['原料编码','原料名称','关联原料溯源报告编码'].includes(name)){
-  const key=name==='关联原料溯源报告编码'?'溯源报告编码':name;
-  return dishReverseReports(r).some(source=>name==='原料名称'?String(source[key]||'').includes(val):source[key]===val);
- }const aliases={'原料批次号':'原料批次号','收货时间':'收货日期','发生日期':'损耗发生日期','数据更新时间':'最后更新时间','库存组织':'销售组织','门店/组织':'门店','门店':'适用门店'};if(!(name in r)&&aliases[name])name=aliases[name];const f=p.filters.find(f=>f.name===name);if(name==='菜品名称/编码')return String(r['菜品名称']).includes(val)||r['菜品编码']===val;
- if(name==='关联物料名称')return String(r['关联物料']).includes(val);
- return /精准|精确|编码精准/.test(f?.match||'')?String(r[name])===val:String(r[name]).toLowerCase().includes(val.toLowerCase());
- }))}
+function filteredRows(p){
+ const detailFilters=p.filters.filter(f=>f.detailField&&state.filters[f.name]);
+ const listFilters=Object.entries(state.filters).filter(([name])=>!detailFilters.some(f=>f.name===name));
+ return records(p).filter(r=>{
+  if(detailFilters.length&&!subRows(p.tabs[0],r).some(line=>detailFilters.every(f=>{
+   const value=String(line[f.detailField]??'');
+   const query=state.filters[f.name];
+   return f.match==='精准查询'?value===query:value.toLowerCase().includes(query.toLowerCase());
+  })))return false;
+  return listFilters.every(([name,val])=>{
+   if(typeof val==='object'){const aliases={'生产日期时间段':'生产日期','收货时间':'收货日期','发生日期':'损耗发生日期','更新时间':'最后更新时间'};const rangeField=name.endsWith('日期时间段')?name.slice(0,-3):name.replace(/时间段$/,'时间');
+    const field=p.filters.find(f=>f.name===name)?.field;
+    const n=field||(window.LXJ_SOURCE.pages[p.id]?rangeField:name==='报告生成时间段'?'报告生成时间':name in r?name:aliases[name]||rangeField);
+    const date=String(r[n]||'').slice(0,10);
+    return (!val.start&&!val.end)||(date!==''&&(!val.start||date>=val.start)&&(!val.end||date<=val.end));}
+   if(!val)return true;
+   if(p.id==='public-report'&&['原料编码','原料名称','原料批次号','供应商编码','供应商名称','关联原料报告编码'].includes(name))return publicScopeMatches(r);
+   if(p.id==='reverse'&&['原料编码','原料名称','关联原料溯源报告编码'].includes(name)){
+    const key=name==='关联原料溯源报告编码'?'溯源报告编码':name;
+    return dishReverseReports(r).some(source=>name==='原料名称'?String(source[key]||'').includes(val):source[key]===val);
+   }const aliases={'原料批次号':'原料批次号','收货时间':'收货日期','发生日期':'损耗发生日期','数据更新时间':'最后更新时间','库存组织':'销售组织','门店/组织':'门店','门店':'适用门店'};if(!(name in r)&&aliases[name])name=aliases[name];const f=p.filters.find(f=>f.name===name);if(name==='菜品名称/编码')return String(r['菜品名称']).includes(val)||r['菜品编码']===val;
+   if(name==='关联物料名称')return String(r['关联物料']).includes(val);
+   return /精准|精确|编码精准/.test(f?.match||'')?String(r[name])===val:String(r[name]).toLowerCase().includes(val.toLowerCase());
+  });
+ });
+}
 function headingHTML(p,title=p.name,description=p.description||'',tools=''){return `<div class="page-heading"><div><h1>${esc(title)}</h1><p>${esc(description)}</p></div><div class="heading-tools">${tools}</div></div>`}
 function pageCount(total,size){return Math.max(1,Math.ceil(total/size))}
 function pageRows(rows,view){
@@ -298,12 +309,11 @@ function listHTML(p){
  const add=editable?ibtn(p.kind==='knowledge'?'上传文档':'新增','new','plus','primary'):'';
  return headingHTML(p,p.name,p.description,ibtn('刷新','refresh','refresh','plain'))+
  (p.id==='knowledge'?`<section class="panel"><div class="section-title">外部平台入口</div><div class="external-links">${btn('法规知识库 · 待配置','external','plain')}${btn('风险评估 · 待配置','external','plain')}</div></section>`:'')+
- filtersHTML(p)+`<section class="panel ${p.id==='public-report'?'public-report-list':''}">${p.id==='public-report'?publicReportSelectionHTML():''}<div class="table-toolbar"><h2>${esc(p.kind==='report'?'溯源报告列表':p.name+'列表')}</h2><span class="muted">${window.LXJ_SOURCE.pages[p.id]?'按业务源表结构展示演示数据':p.kind==='report'?'按批次归集 · 仅供查看':p.kind==='readonly'?'源系统同步数据':''}</span>${add}${p.id==='consumer'?btn('评价模板配置','survey-open','plain'):''}${p.id==='dish-display'?btn('按原料批量关闭展示','material-batch-open','primary'):''}${p.id==='location'?btn('批量添加','batch-import','plain'):''}${p.id==='warehouse'&&window.LXJ_SOURCE.warehouseStorage?btn('仓储存储记录','warehouse-storage','plain'):''}${p.kind==='template'?btn('新增版本','new-version','plain'):''}</div>${tableHTML(p,pageRows(rows,state),p.columns,true)}${pagination(rows.length)}</section><p class="note">当前展示为原型演示数据；${['readonly','report','consumer-report'].includes(p.kind)?'业务事实以源系统数据为准。':'配置操作保存在本机浏览器，可用于交互评审。'}</p>`;
+ filtersHTML(p)+`<section class="panel ${p.id==='public-report'?'public-report-list':''}" data-list-page="${esc(p.id)}">${p.id==='public-report'?publicReportSelectionHTML():''}<div class="table-toolbar"><h2>${esc(p.kind==='report'?'溯源报告列表':p.name+'列表')}</h2><span class="muted">${window.LXJ_SOURCE.pages[p.id]?'按业务源表结构展示演示数据':p.kind==='report'?'按批次归集 · 仅供查看':p.kind==='readonly'?'源系统同步数据':''}</span>${add}${p.id==='consumer'?btn('评价模板配置','survey-open','plain'):''}${p.id==='dish-display'?btn('按原料批量关闭展示','material-batch-open','primary'):''}${p.id==='location'?btn('批量添加','batch-import','plain'):''}${p.id==='warehouse'&&window.LXJ_SOURCE.warehouseStorage?btn('仓储存储记录','warehouse-storage','plain'):''}${p.kind==='template'?btn('新增版本','new-version','plain'):''}</div>${tableHTML(p,pageRows(rows,state),p.columns,true)}${pagination(rows.length)}</section><p class="note">当前展示为原型演示数据；${['readonly','report','consumer-report'].includes(p.kind)?'业务事实以源系统数据为准。':'配置操作保存在本机浏览器，可用于交互评审。'}</p>`;
 }
 function infoHTML(fields,r){return `<div class="info-grid">${fields.filter(f=>f.name!=='操作').map(f=>`<div class="info-item"><label>${esc(f.name)}</label><div class="value">${valueCell(f.name,businessFieldValue(page(),fields,r,f.name),page(),state.index)}</div></div>`).join('')}</div>`}
 function panel(title,body,tools=''){return `<section class="panel"><div class="section-title">${esc(title)}${tools?`<span class="right">${tools}</span>`:''}</div>${body}</section>`}
-function subRows(t){
- const r=row();
+function subRows(t,r=row()){
  if(r?._sourceSample){
   const reference=r._sourceDetailRefs?.[t.name];
   return window.LXJ_SOURCE.details?.[reference]||r._sourceTabs?.[t.name]||[];
@@ -391,6 +401,10 @@ function generalDetail(p,r){
  if(p.id==='feedback')return feedbackDetailHTML(p,r);
  if(p.id==='user')return userDetailHTML(p,r);
  const tabs=p.tabs;
+ if(p.detailTableOnly){
+  const table=tabs[0];
+  return panel(table.name,`<div class="tab-body">${subtableHTML(table)}</div>`);
+ }
  if(p.id==='driver')return panel('基本信息',infoHTML(p.columns.filter(f=>f.name!=='操作'),r))+panel('驾驶证信息',infoHTML(p.tabs[0].fields,r))+panel('健康证信息',infoHTML(p.healthFields,r));
  if(p.id==='supplier'){const fields=[...new Map([...p.columns,...tabs.filter(t=>t.mode==='info').flatMap(t=>t.fields)].filter(f=>f.name!=='操作').map(f=>[f.name,f])).values()];return panel('基本信息与营业执照',infoHTML(fields,r))+tabs.filter(t=>t.mode!=='info').map(t=>panel(t.name,`<div class="tab-body">${subtableHTML(t)}</div>`)).join('')}
  return (p.kind==='consumer-report'?reportSummaryHTML((p.reportDetailColumns||p.columns).filter(f=>f.name!=='操作'),r):panel('基本信息',infoHTML([...p.columns.filter(f=>f.name!=='操作'),...(p.detailFields||[])],r)))+(p.id==='complaint'?complaintTrackingHTML(r):'')+(p.id==='public-report'&&r._closedAt?panel('关闭记录',infoHTML([{name:'关闭时间'},{name:'关闭人'},{name:'关联事件'},{name:'关闭原因'}],{'关闭时间':r._closedAt,'关闭人':r._closedBy,'关联事件':r._closeEvent||'—','关闭原因':r._closeReason||'历史关闭记录'})):'')+(tabs.length?`<section class="panel"><div class="tabs">${tabs.map((t,i)=>btn(t.name,'tab',`tab ${state.tab===i?'active':''}`,`data-num="${i}"`)).join('')}</div><div class="tab-body">${subtableHTML(tabs[state.tab]||tabs[0])}</div></section>`:'');
