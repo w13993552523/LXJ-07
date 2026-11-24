@@ -52,7 +52,7 @@ window.PAGES = [
         "match": "/"
       },
       {
-        "name": "物料模板编码",
+        "name": "原料模板编码",
         "type": "input",
         "default": "/",
         "match": "精准查询"
@@ -69,27 +69,7 @@ window.PAGES = [
         "match": "精准查询"
       },
       {
-        "name": "车牌号",
-        "type": "input",
-        "match": "精准查询"
-      },
-      {
-        "name": "收货任务编码",
-        "type": "input",
-        "match": "精准查询"
-      },
-      {
-        "name": "仓库编码",
-        "type": "input",
-        "match": "精准查询"
-      },
-      {
         "name": "供应商编码",
-        "type": "input",
-        "match": "精准查询"
-      },
-      {
-        "name": "模板编码",
         "type": "input",
         "match": "精准查询"
       }
@@ -137,11 +117,13 @@ window.PAGES = [
       },
       {
         "name": "物料模板编码",
+        "detailOnly": true,
         "description": "",
         "note": ""
       },
       {
         "name": "模板版本号",
+        "detailOnly": true,
         "description": "",
         "note": ""
       },
@@ -152,7 +134,7 @@ window.PAGES = [
       },
       {
         "name": "模板版本号",
-        "description": "",
+        "description": "该报告所用的原料模板版本号",
         "note": ""
       },
       {
@@ -161,15 +143,17 @@ window.PAGES = [
         "note": ""
       },
       {
-        "name": "溯源报告",
-        "description": "点击查看详情",
-        "note": ""
-      },
-      {
-        "name": "菜品模板编码"
+        "name": "菜品模板编码",
+        "detailOnly": true
       },
       {
         "name": "供应商模板编码"
+      },
+      {
+        "name": "供应商模板版本号",
+        "label": "模板版本号",
+        "description": "该报告所用的供应商模板版本号",
+        "listOnly": true
       },
       {
         "name": "供应商名称"
@@ -247,7 +231,7 @@ window.PAGES = [
         "match": "/"
       },
       {
-        "name": "物料模板编码",
+        "name": "原料模板编码",
         "type": "input",
         "default": "/",
         "match": "精准查询"
@@ -264,27 +248,7 @@ window.PAGES = [
         "match": "精准查询"
       },
       {
-        "name": "车牌号",
-        "type": "input",
-        "match": "精准查询"
-      },
-      {
-        "name": "收货任务编码",
-        "type": "input",
-        "match": "精准查询"
-      },
-      {
-        "name": "仓库编码",
-        "type": "input",
-        "match": "精准查询"
-      },
-      {
         "name": "供应商编码",
-        "type": "input",
-        "match": "精准查询"
-      },
-      {
-        "name": "模板编码",
         "type": "input",
         "match": "精准查询"
       }
@@ -332,11 +296,13 @@ window.PAGES = [
       },
       {
         "name": "物料模板编码",
+        "detailOnly": true,
         "description": "",
         "note": ""
       },
       {
         "name": "模板版本号",
+        "detailOnly": true,
         "description": "",
         "note": ""
       },
@@ -347,7 +313,7 @@ window.PAGES = [
       },
       {
         "name": "模板版本号",
-        "description": "",
+        "description": "该报告所用的原料模板版本号",
         "note": ""
       },
       {
@@ -356,15 +322,17 @@ window.PAGES = [
         "note": ""
       },
       {
-        "name": "溯源报告",
-        "description": "点击查看详情",
-        "note": ""
-      },
-      {
-        "name": "菜品模板编码"
+        "name": "菜品模板编码",
+        "detailOnly": true
       },
       {
         "name": "供应商模板编码"
+      },
+      {
+        "name": "供应商模板版本号",
+        "label": "模板版本号",
+        "description": "该报告所用的供应商模板版本号",
+        "listOnly": true
       },
       {
         "name": "供应商名称"

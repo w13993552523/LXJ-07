@@ -172,7 +172,14 @@ function records(p){
  if(p.id==='relation')dataStore[p.id].forEach(r=>{if(!['已配置','未配置','配置中'].includes(r['关联关系配置状态']))r['关联关系配置状态']=r._relations?.length?'已配置':'未配置'});
  if(p.id==='alert-level')dataStore[p.id].forEach((r,i)=>{if(!r['告警级别名称']||r['告警级别名称']==='—')r['告警级别名称']=['一级','二级','三级'][i%3]});
  if(p.id==='alert-group')dataStore[p.id].forEach((r,i)=>{if(!r['告警用户组名称']||r['告警用户组名称']==='—')r['告警用户组名称']=['门店负责人组','仓储食安组','供应商质量组'][i%3]});
- if(['forward','material-reverse'].includes(p.id))dataStore[p.id].forEach((r,i)=>{if(r['原料收货数量']==null)r['原料收货数量']=sample('原料收货数量',i,p)});
+ if(['forward','material-reverse'].includes(p.id))dataStore[p.id].forEach((r,i)=>{
+  r['原料收货数量']??=sample('原料收货数量',i,p);
+  // Older demo reports predate the supplier template version field.
+  const demoIndex=Number(r._key?.slice(p.id.length+1));
+  if(r['供应商模板版本号']==null&&Number.isInteger(demoIndex)&&demoIndex>=0&&r._key===`${p.id}-${demoIndex}`&&r['供应商模板编码']===sample('供应商模板编码',demoIndex,p)){
+   r['供应商模板版本号']=sample('供应商模板版本号',demoIndex,p);
+  }
+ });
  if(p.id==='material-reverse')appendSourceTraceReports(dataStore[p.id]);
  if(p.id==='reverse')dataStore[p.id].forEach(normalizeDishReport);
  if(p.id==='public-report')dataStore[p.id].forEach(normalizeConsumerReport);
@@ -215,7 +222,7 @@ function tableHTML(p,rows,fields=p.columns,main=false){
  const hasAction=fields.some(f=>f.name==='操作');
  const ff=main&&!hasAction&&p.uiActions.length&&p.showActionColumn!==false?[...fields,{name:'操作'}]:fields;
  const all=main?dataStore[p.id]:null;
- return `<div class="table-scroll"><table class="data-table"><thead><tr>${main&&p.id==='public-report'?`<th class="check sticky-check"><input type="checkbox" data-public-select-page aria-label="选择本页可关闭报告" ${rows.every(r=>r['报告状态']==='已关闭')?'disabled':''} ${rows.some(r=>r['报告状态']!=='已关闭')&&rows.filter(r=>r['报告状态']!=='已关闭').every(r=>state.closedSelection?.has(r._key))?'checked':''}></th>`:main&&p.kind==='template'?'<th class="check">选择</th>':''}${ff.map((f,i)=>`<th class="${main&&i===0?'sticky-first':''} ${f.name==='操作'?'sticky-action':''}" title="${esc(f.description||f.note||f.name)}">${esc(f.name)}</th>`).join('')}</tr></thead><tbody>${rows.length?rows.map((r,k)=>`<tr>${main&&p.id==='public-report'?`<td class="check sticky-check"><input type="checkbox" data-public-key="${esc(r._key)}" aria-label="选择报告 ${esc(r['消费者溯源报告编码'])}" ${state.closedSelection?.has(r._key)?'checked':''} ${r['报告状态']==='已关闭'?'disabled':''}></td>`:''}${main&&p.kind==='template'?`<td class="check"><input type="radio" name="template-choice" data-act="select-template" value="${all.indexOf(r)}" ${state.templateChoice===all.indexOf(r)?'checked':''} aria-label="选择模板"></td>`:''}${ff.map((f,i)=>`<td class="${main&&i===0?'sticky-first':''} ${f.name==='操作'?'sticky-action':''}">${main&&(p.id==='public-report'?f.name==='消费者溯源报告编码':i===0)&&p.uiActions.length&&p.linkFirstColumn!==false?`<button class="text code" data-act="row-action" data-index="${all.indexOf(r)}" data-label="查看">${esc(r[f.name])}</button>`:valueCell(f.name,businessFieldValue(p,ff,r,f.name),p,main?all.indexOf(r):k)}</td>`).join('')}</tr>`).join(''):`<tr><td colspan="${ff.length}" class="empty">暂无符合条件的数据</td></tr>`}</tbody></table></div>`;
+ return `<div class="table-scroll"><table class="data-table"><thead><tr>${main&&p.id==='public-report'?`<th class="check sticky-check"><input type="checkbox" data-public-select-page aria-label="选择本页可关闭报告" ${rows.every(r=>r['报告状态']==='已关闭')?'disabled':''} ${rows.some(r=>r['报告状态']!=='已关闭')&&rows.filter(r=>r['报告状态']!=='已关闭').every(r=>state.closedSelection?.has(r._key))?'checked':''}></th>`:main&&p.kind==='template'?'<th class="check">选择</th>':''}${ff.map((f,i)=>`<th class="${main&&i===0?'sticky-first':''} ${f.name==='操作'?'sticky-action':''}" title="${esc(f.description||f.note||f.name)}">${esc(f.label||f.name)}</th>`).join('')}</tr></thead><tbody>${rows.length?rows.map((r,k)=>`<tr>${main&&p.id==='public-report'?`<td class="check sticky-check"><input type="checkbox" data-public-key="${esc(r._key)}" aria-label="选择报告 ${esc(r['消费者溯源报告编码'])}" ${state.closedSelection?.has(r._key)?'checked':''} ${r['报告状态']==='已关闭'?'disabled':''}></td>`:''}${main&&p.kind==='template'?`<td class="check"><input type="radio" name="template-choice" data-act="select-template" value="${all.indexOf(r)}" ${state.templateChoice===all.indexOf(r)?'checked':''} aria-label="选择模板"></td>`:''}${ff.map((f,i)=>`<td class="${main&&i===0?'sticky-first':''} ${f.name==='操作'?'sticky-action':''}">${main&&(p.id==='public-report'?f.name==='消费者溯源报告编码':i===0)&&p.uiActions.length&&p.linkFirstColumn!==false?`<button class="text code" data-act="row-action" data-index="${all.indexOf(r)}" data-label="查看">${esc(r[f.name])}</button>`:valueCell(f.name,businessFieldValue(p,ff,r,f.name),p,main?all.indexOf(r):k)}</td>`).join('')}</tr>`).join(''):`<tr><td colspan="${ff.length}" class="empty">暂无符合条件的数据</td></tr>`}</tbody></table></div>`;
 }
 function control(f,v='',readonly=false,scope='filter'){
  const name=f.name,opts=options(name,page());
@@ -303,13 +310,14 @@ function updatePagination(control,pageNo,size){
 }
 function listHTML(p){
  if(p.id==='overview'){records(p).forEach(r=>{const graph=overviewGraph(r);const supplierCount=graph.branches.reduce((sum,b)=>sum+b.suppliers.length,0);r['供应商模板状态']=!graph.supplierTemplateCount?'未配置':graph.supplierTemplateCount===supplierCount?'已配置':'部分配置';r['原料模板状态']=graph.materialTemplateCount===graph.branches.length?'已配置':graph.materialTemplateCount===0?'未配置':'部分配置';r['原料模板配置状态']=r['原料模板状态'];r['关联原料名称']=graph.branches.map(b=>b.node.name).join('，');r['关联原料类型']=graph.branches.length>1?'多品类关联':'单一关联'})}
+ const fields=p.columns.filter(f=>!f.detailOnly);
  const matches=filteredRows(p);
  const rows=p.id==='material-reverse'&&!window.LXJ_SOURCE.publicDemo?[...matches].sort((a,b)=>Number(!!b._sourceTrace)-Number(!!a._sourceTrace)):matches;
  const editable=['template','link','alert','consumer','consumer-link','editable','knowledge'].includes(p.kind);
  const add=editable?ibtn(p.kind==='knowledge'?'上传文档':'新增','new','plus','primary'):'';
  return headingHTML(p,p.name,p.description,ibtn('刷新','refresh','refresh','plain'))+
  (p.id==='knowledge'?`<section class="panel"><div class="section-title">外部平台入口</div><div class="external-links">${btn('法规知识库 · 待配置','external','plain')}${btn('风险评估 · 待配置','external','plain')}</div></section>`:'')+
- filtersHTML(p)+`<section class="panel ${p.id==='public-report'?'public-report-list':''}" data-list-page="${esc(p.id)}">${p.id==='public-report'?publicReportSelectionHTML():''}<div class="table-toolbar"><h2>${esc(p.kind==='report'?'溯源报告列表':p.name+'列表')}</h2><span class="muted">${window.LXJ_SOURCE.pages[p.id]?'按业务源表结构展示演示数据':p.kind==='report'?'按批次归集 · 仅供查看':p.kind==='readonly'?'源系统同步数据':''}</span>${add}${p.id==='consumer'?btn('评价模板配置','survey-open','plain'):''}${p.id==='dish-display'?btn('按原料批量关闭展示','material-batch-open','primary'):''}${p.id==='location'?btn('批量添加','batch-import','plain'):''}${p.id==='warehouse'&&window.LXJ_SOURCE.warehouseStorage?btn('仓储存储记录','warehouse-storage','plain'):''}${p.kind==='template'?btn('新增版本','new-version','plain'):''}</div>${tableHTML(p,pageRows(rows,state),p.columns,true)}${pagination(rows.length)}</section><p class="note">当前展示为原型演示数据；${['readonly','report','consumer-report'].includes(p.kind)?'业务事实以源系统数据为准。':'配置操作保存在本机浏览器，可用于交互评审。'}</p>`;
+ filtersHTML(p)+`<section class="panel ${p.id==='public-report'?'public-report-list':''}" data-list-page="${esc(p.id)}">${p.id==='public-report'?publicReportSelectionHTML():''}<div class="table-toolbar"><h2>${esc(p.kind==='report'?'溯源报告列表':p.name+'列表')}</h2><span class="muted">${window.LXJ_SOURCE.pages[p.id]?'按业务源表结构展示演示数据':p.kind==='report'?'按批次归集 · 仅供查看':p.kind==='readonly'?'源系统同步数据':''}</span>${add}${p.id==='consumer'?btn('评价模板配置','survey-open','plain'):''}${p.id==='dish-display'?btn('按原料批量关闭展示','material-batch-open','primary'):''}${p.id==='location'?btn('批量添加','batch-import','plain'):''}${p.id==='warehouse'&&window.LXJ_SOURCE.warehouseStorage?btn('仓储存储记录','warehouse-storage','plain'):''}${p.kind==='template'?btn('新增版本','new-version','plain'):''}</div>${tableHTML(p,pageRows(rows,state),fields,true)}${pagination(rows.length)}</section><p class="note">当前展示为原型演示数据；${['readonly','report','consumer-report'].includes(p.kind)?'业务事实以源系统数据为准。':'配置操作保存在本机浏览器，可用于交互评审。'}</p>`;
 }
 function infoHTML(fields,r){return `<div class="info-grid">${fields.filter(f=>f.name!=='操作').map(f=>`<div class="info-item"><label>${esc(f.name)}</label><div class="value">${valueCell(f.name,businessFieldValue(page(),fields,r,f.name),page(),state.index)}</div></div>`).join('')}</div>`}
 function panel(title,body,tools=''){return `<section class="panel"><div class="section-title">${esc(title)}${tools?`<span class="right">${tools}</span>`:''}</div>${body}</section>`}
@@ -584,7 +592,7 @@ function reportChildOverlayHTML(o){
 
 function reportHTML(p,r){
  const links=reportLinks(p);state.stage=Math.max(0,Math.min(state.stage,links.length-1));const current=links[state.stage],materials=reportMaterials(p,r),mainTables=reportSectionTables(current);
- const overviewFields=(p.reportDetailColumns||p.columns).filter(f=>!['操作','溯源报告'].includes(f.name));
+ const overviewFields=(p.reportDetailColumns||p.columns).filter(f=>!f.listOnly&&!['操作','溯源报告'].includes(f.name));
  const overviewRow={...r};
  if(['forward','material-reverse'].includes(p.id))overviewFields.splice(3,0,{name:'供应商资质'});
  if(p.id==='forward'){
