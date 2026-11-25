@@ -8,6 +8,19 @@ function sourceValue(value) {
  return value == null || value === '' ? '—' : value;
 }
 
+function transferListRows(orders) {
+ return orders.flatMap(({_sourceTabs, _sourceDetailRefs, ...order})=>{
+  const lines=_sourceTabs?.['调拨物料'];
+  return (lines?.length?lines:[order]).map((line,index)=>({
+   ...order,
+   ...line,
+   _key:`${order._key}-${index}`,
+   'guid':line.guid??line['记录标识'],
+   '更新时间':line['更新时间']??line['明细更新时间']
+  }));
+ }).sort((first,second)=>String(second['更新时间']??'').localeCompare(String(first['更新时间']??'')));
+}
+
 function businessNamePairs() {
  return [
   ['store','门店名称',['门店编码','收货门店编码','退货门店编码','所属门店编码']],

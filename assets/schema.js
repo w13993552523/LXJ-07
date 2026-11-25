@@ -2238,6 +2238,9 @@ window.PAGES = [
         "note": "ST#yyyy-mm-dd+4位流水号：ST202401020001"
       },
       {
+        "name": "模板名称"
+      },
+      {
         "name": "原料编码",
         "description": "原料的唯一标识编码",
         "note": ""
@@ -2271,9 +2274,6 @@ window.PAGES = [
         "name": "操作",
         "description": "数据操作项入口",
         "note": ""
-      },
-      {
-        "name": "模板名称"
       }
     ],
     "tabs": [
@@ -2439,6 +2439,9 @@ window.PAGES = [
         "note": "ST#yyyy-mm-dd+4位流水号：ST202401020001"
       },
       {
+        "name": "模板名称"
+      },
+      {
         "name": "原料编码",
         "description": "原料的唯一标识编码",
         "note": ""
@@ -2482,9 +2485,6 @@ window.PAGES = [
         "name": "操作",
         "description": "数据操作项入口",
         "note": ""
-      },
-      {
-        "name": "模板名称"
       }
     ],
     "tabs": [
@@ -8279,6 +8279,7 @@ window.PAGES = [
     "group": "门店管理",
     "name": "调拨管理",
     "kind": "readonly",
+    "listOnly": true,
     "sourceRange": [
       884,
       900
@@ -8288,6 +8289,12 @@ window.PAGES = [
         "name": "调拨单号",
         "type": "input",
         "match": "精准查询"
+      },
+      {
+        "name": "物料编码 / 名称",
+        "type": "input",
+        "placeholder": "请输入物料编码或物料名称",
+        "searchFields": ["物料编码", "物料名称"]
       },
       {
         "name": "拨出门店编码",
@@ -8326,6 +8333,39 @@ window.PAGES = [
         "name": "调拨单号"
       },
       {
+        "name": "调拨量"
+      },
+      {
+        "name": "调拨单位编码"
+      },
+      {
+        "name": "调拨单位名称"
+      },
+      {
+        "name": "批次号"
+      },
+      {
+        "name": "删除标识"
+      },
+      {
+        "name": "guid"
+      },
+      {
+        "name": "生产日期"
+      },
+      {
+        "name": "物料编码"
+      },
+      {
+        "name": "物料名称"
+      },
+      {
+        "name": "排序号"
+      },
+      {
+        "name": "更新时间"
+      },
+      {
         "name": "拨出门店编码"
       },
       {
@@ -8348,71 +8388,14 @@ window.PAGES = [
       },
       {
         "name": "创建时间"
-      },
-      {
-        "name": "明细更新时间"
-      },
-      {
-        "name": "操作"
       }
     ],
-    "tabs": [
-      {
-        "name": "调拨物料",
-        "mode": "table",
-        "fields": [
-          {
-            "name": "排序号"
-          },
-          {
-            "name": "调拨单号"
-          },
-          {
-            "name": "物料编码"
-          },
-          {
-            "name": "物料名称"
-          },
-          {
-            "name": "批次号"
-          },
-          {
-            "name": "生产日期"
-          },
-          {
-            "name": "调拨量"
-          },
-          {
-            "name": "调拨单位编码"
-          },
-          {
-            "name": "调拨单位名称"
-          },
-          {
-            "name": "记录标识"
-          },
-          {
-            "name": "明细更新时间"
-          }
-        ],
-        "emptyNote": "样例未提供可关联的记录。"
-      }
-    ],
-    "actions": [
-      {
-        "name": "详情",
-        "description": "抽屉展示调拨的各个物料子表\n子表字段如下：\n序号\n所属调拨单号\n货品编码\n调拨数量，最多保留 4 位小数\n调拨计量单位编码\n货品生产日期\n货品批次号",
-        "note": "源记录只读"
-      }
-    ],
+    "tabs": [],
+    "actions": [],
     "form": [],
     "rules": [],
-    "description": "汇总门店调拨相关可用业务凭证",
-    "uiActions": [
-      "查看"
-    ],
-    "detailMode": "drawer",
-    "detailFields": []
+    "description": "按物料明细查询门店调拨记录",
+    "uiActions": []
   },
   {
     "id": "temperature",
