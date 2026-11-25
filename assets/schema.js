@@ -34,18 +34,6 @@ window.PAGES = [
         "match": "精准查询"
       },
       {
-        "name": "菜品名称",
-        "type": "input",
-        "default": "/",
-        "match": "下拉列表模糊查询"
-      },
-      {
-        "name": "菜品编码",
-        "type": "input",
-        "default": "/",
-        "match": "精准查询"
-      },
-      {
         "name": "原料生产日期",
         "type": "时间点",
         "default": "/",
@@ -61,11 +49,6 @@ window.PAGES = [
         "name": "供应商模板编码",
         "type": "input",
         "default": "/",
-        "match": "精准查询"
-      },
-      {
-        "name": "生产日期时间段",
-        "type": "时间段",
         "match": "精准查询"
       },
       {
@@ -96,11 +79,6 @@ window.PAGES = [
         "note": "以关联收货记录及其计量单位为准"
       },
       {
-        "name": "关联菜品",
-        "description": "#菜品名称-#菜品编码",
-        "note": "可能多个，逗号隔开"
-      },
-      {
         "name": "原料批次号",
         "description": "",
         "note": ""
@@ -112,18 +90,6 @@ window.PAGES = [
       },
       {
         "name": "原料供应商",
-        "description": "",
-        "note": ""
-      },
-      {
-        "name": "物料模板编码",
-        "detailOnly": true,
-        "description": "",
-        "note": ""
-      },
-      {
-        "name": "模板版本号",
-        "detailOnly": true,
         "description": "",
         "note": ""
       },
@@ -143,10 +109,6 @@ window.PAGES = [
         "note": ""
       },
       {
-        "name": "菜品模板编码",
-        "detailOnly": true
-      },
-      {
         "name": "供应商模板编码"
       },
       {
@@ -157,7 +119,9 @@ window.PAGES = [
       },
       {
         "name": "供应商名称"
-      },
+      }
+    ],
+    "detailFields": [
       {
         "name": "生产日期"
       }
@@ -213,18 +177,6 @@ window.PAGES = [
         "match": "精准查询"
       },
       {
-        "name": "菜品名称",
-        "type": "input",
-        "default": "/",
-        "match": "下拉列表模糊查询"
-      },
-      {
-        "name": "菜品编码",
-        "type": "input",
-        "default": "/",
-        "match": "精准查询"
-      },
-      {
         "name": "原料生产日期",
         "type": "时间点",
         "default": "/",
@@ -240,11 +192,6 @@ window.PAGES = [
         "name": "供应商模板编码",
         "type": "input",
         "default": "/",
-        "match": "精准查询"
-      },
-      {
-        "name": "生产日期时间段",
-        "type": "时间段",
         "match": "精准查询"
       },
       {
@@ -275,11 +222,6 @@ window.PAGES = [
         "note": "以关联收货记录及其计量单位为准"
       },
       {
-        "name": "关联菜品",
-        "description": "#菜品名称-#菜品编码",
-        "note": "可能多个，逗号隔开"
-      },
-      {
         "name": "原料批次号",
         "description": "",
         "note": ""
@@ -291,18 +233,6 @@ window.PAGES = [
       },
       {
         "name": "原料供应商",
-        "description": "",
-        "note": ""
-      },
-      {
-        "name": "物料模板编码",
-        "detailOnly": true,
-        "description": "",
-        "note": ""
-      },
-      {
-        "name": "模板版本号",
-        "detailOnly": true,
         "description": "",
         "note": ""
       },
@@ -322,10 +252,6 @@ window.PAGES = [
         "note": ""
       },
       {
-        "name": "菜品模板编码",
-        "detailOnly": true
-      },
-      {
         "name": "供应商模板编码"
       },
       {
@@ -333,6 +259,13 @@ window.PAGES = [
         "label": "模板版本号",
         "description": "该报告所用的供应商模板版本号",
         "listOnly": true
+      }
+    ],
+    "detailFields": [
+      {
+        "name": "关联菜品",
+        "description": "#菜品名称-#菜品编码",
+        "note": "可能多个，逗号隔开"
       },
       {
         "name": "供应商名称"
@@ -2398,9 +2331,14 @@ window.PAGES = [
         "note": ""
       },
       {
-        "name": "覆盖范围",
-        "description": "选择/回显原料",
-        "note": ""
+        "name": "模板覆盖范围",
+        "description": "按菜品选取关联原料",
+        "note": "在列表操作"
+      },
+      {
+        "name": "删除",
+        "description": "确认后删除草稿模板",
+        "note": "仅草稿可删除"
       }
     ],
     "form": [
@@ -2424,9 +2362,6 @@ window.PAGES = [
       },
       {
         "name": "变更说明"
-      },
-      {
-        "name": "溯源原料范围"
       }
     ],
     "rules": [
@@ -2438,9 +2373,10 @@ window.PAGES = [
     "description": "定义不同原料及业务路径的采集环节和关联规则，支持大仓收货原料、自有养殖产品、直入MES等差异场景，并将后续出入库、加工、配送、门店关联信息汇入对应原料溯源报告。模板须避免将经MES加工形成的半成品重复作为上游原料起点。",
     "uiActions": [
       "查看",
+      "模板覆盖范围",
       "复制模板",
       "版本管理",
-      "覆盖范围"
+      "删除"
     ],
     "detailMode": "page"
   },
@@ -2606,9 +2542,14 @@ window.PAGES = [
         "note": ""
       },
       {
-        "name": "覆盖范围",
-        "description": "选择/回显供应商和原料",
-        "note": ""
+        "name": "模板覆盖范围",
+        "description": "按菜品选取关联原料，并单选供应商",
+        "note": "在列表操作"
+      },
+      {
+        "name": "删除",
+        "description": "确认后删除草稿模板",
+        "note": "仅草稿可删除"
       }
     ],
     "form": [
@@ -2632,12 +2573,6 @@ window.PAGES = [
       },
       {
         "name": "变更说明"
-      },
-      {
-        "name": "溯源原料范围"
-      },
-      {
-        "name": "供应商范围"
       }
     ],
     "rules": [
@@ -2646,9 +2581,10 @@ window.PAGES = [
     "description": "“溯源模板配置”功能为不同的供应商在不同阶段下定义溯源信息内容，并通过分层分类的方式进行流程和环节拆解，支持灵活定义。",
     "uiActions": [
       "查看",
+      "模板覆盖范围",
       "复制模板",
       "版本管理",
-      "覆盖范围"
+      "删除"
     ],
     "detailMode": "page"
   },
@@ -5480,6 +5416,10 @@ window.PAGES = [
       {
         "name": "库存地点温度",
         "mode": "table",
+        "timeRange": {
+          "field": "采集时间",
+          "maxHours": 24
+        },
         "fields": [
           {
             "name": "IOT设备编码"
@@ -5627,6 +5567,7 @@ window.PAGES = [
       {
         "name": "质检单",
         "mode": "table",
+        "search": false,
         "fields": [
           {
             "name": "已检数量"
@@ -5709,6 +5650,7 @@ window.PAGES = [
       {
         "name": "批检附件",
         "mode": "table",
+        "search": false,
         "fields": [
           {
             "name": "入库日期"
@@ -5936,6 +5878,11 @@ window.PAGES = [
       {
         "name": "出库物料明细",
         "mode": "table",
+        "searchFields": [
+          "物料名称",
+          "物料编码"
+        ],
+        "searchPlaceholder": "原料名称 / 原料编码",
         "fields": [
           {
             "name": "入库日期"
@@ -6004,7 +5951,7 @@ window.PAGES = [
     "actions": [
       {
         "name": "详情",
-        "description": "基于出库单多个出库物料进行明细行分页，有以下字段，并支持部分字段筛选\n货主\n物料编码（支持筛选）\n物料名称（支持筛选）\n数量\n单位\n物料批次（支持筛选）\n生产日期\n失效日期\n入库日期\n关联入库单号\n入库日期",
+        "description": "基于出库单多个出库物料进行明细行分页，有以下字段，并支持部分字段筛选\n货主\n物料编码（支持筛选）\n物料名称（支持筛选）\n数量\n单位\n物料批次\n生产日期\n失效日期\n入库日期\n关联入库单号\n入库日期",
         "note": "只读"
       }
     ],
@@ -6175,6 +6122,11 @@ window.PAGES = [
       {
         "name": "央厨收货明细",
         "mode": "table",
+        "searchFields": [
+          "物料名称",
+          "物料编码"
+        ],
+        "searchPlaceholder": "原料名称 / 原料编码",
         "fields": [
           {
             "name": "收货单号"
@@ -6343,6 +6295,11 @@ window.PAGES = [
       {
         "name": "投料明细",
         "mode": "table",
+        "searchFields": [
+          "物料名称",
+          "物料编码"
+        ],
+        "searchPlaceholder": "原料名称 / 原料编码",
         "fields": [
           {
             "name": "生产订单号"
@@ -6401,6 +6358,7 @@ window.PAGES = [
       {
         "name": "成品检测",
         "mode": "table",
+        "search": false,
         "fields": [
           {
             "name": "来源生产订单号"
@@ -6459,6 +6417,7 @@ window.PAGES = [
       {
         "name": "工序报告",
         "mode": "table",
+        "search": false,
         "fields": [
           {
             "name": "生产订单号"
@@ -6862,6 +6821,11 @@ window.PAGES = [
       {
         "name": "配送明细",
         "mode": "table",
+        "searchFields": [
+          "商品名称",
+          "商品编码"
+        ],
+        "searchPlaceholder": "原料名称 / 原料编码",
         "fields": [
           {
             "name": "任务ID"
@@ -6977,6 +6941,7 @@ window.PAGES = [
       {
         "name": "发运管理",
         "mode": "table",
+        "search": false,
         "fields": [
           {
             "name": "发车单号"
@@ -7065,6 +7030,7 @@ window.PAGES = [
       {
         "name": "线路信息",
         "mode": "table",
+        "search": false,
         "fields": [
           {
             "name": "发车单号"
@@ -7102,6 +7068,7 @@ window.PAGES = [
       {
         "name": "温度信息",
         "mode": "table",
+        "search": false,
         "fields": [
           {
             "name": "发车单号"
@@ -7353,6 +7320,8 @@ window.PAGES = [
       {
         "name": "门店售卖菜单",
         "mode": "table",
+        "searchByDishMaterials": true,
+        "searchPlaceholder": "原料名称 / 原料编码",
         "fields": [
           {
             "name": "菜品ID"
@@ -7378,6 +7347,7 @@ window.PAGES = [
       {
         "name": "门店人员健康证",
         "mode": "table",
+        "search": false,
         "fields": [
           {
             "name": "所属门店编码"
@@ -7410,7 +7380,7 @@ window.PAGES = [
     "actions": [
       {
         "name": "详情",
-        "description": "新打开详情页，显示以下模块和数据\n门店基本信息：\n门店编码\nHR门店编码\nSAP门店编码\n门店名称\n门店地址\n经营类型\n门店营业执照\n商圈类型\n所属公司名称\n选餐方式\n测试门店类型\n运营大区名称\n运营分区名称\n战区负责人姓名\n营业状态\n创建日期\n最后更新时间\n门店售卖菜单：\n分为四种渠道：TS01（堂食）、\nWX02（堂食扫码点餐）、MT03（美团外卖）、EL04（饿了么外\n卖），支持对下方子表筛选，子表字段：\n菜品ID\n菜品编码\n菜品名称\n售卖开始时间\n售卖结束时间\n售卖周期\n门店人员健康证：\n所属门店编码\n人员ID\n健康证有效期\n状态\n附件地址\n门店工作日志：\n",
+        "description": "新打开详情页，显示以下模块和数据\n门店基本信息：\n门店编码\nHR门店编码\nSAP门店编码\n门店名称\n门店地址\n经营类型\n门店营业执照\n商圈类型\n所属公司名称\n选餐方式\n测试门店类型\n运营大区名称\n运营分区名称\n战区负责人姓名\n营业状态\n创建日期\n最后更新时间\n门店售卖菜单：\n分为四种渠道：TS01（堂食）、\nWX02（堂食扫码点餐）、MT03（美团外卖）、EL04（饿了么外\n卖），支持按菜品关联原料的名称或编码筛选菜单，子表字段：\n菜品ID\n菜品编码\n菜品名称\n售卖开始时间\n售卖结束时间\n售卖周期\n门店人员健康证：\n所属门店编码\n人员ID\n健康证有效期\n状态\n附件地址\n门店工作日志：\n",
         "note": "只读"
       }
     ],
@@ -8787,7 +8757,7 @@ window.PAGES = [
       },
       {
         "name": "配置权限",
-        "description": "分别选择菜单及操作权限，提交前展示权限变化和受影响用户数",
+        "description": "按菜单授予访问权限，并逐个勾选该菜单的操作。提交前展示变更及受影响用户数",
         "note": "不得授予超出本人可授权范围的权限"
       },
       {
@@ -8854,22 +8824,10 @@ window.PAGES = [
         "match": "模糊查询"
       },
       {
-        "name": "所属组织",
-        "type": "树形选择",
-        "default": "当前可管理组织",
-        "match": "包含范围查询"
-      },
-      {
         "name": "角色",
         "type": "下拉列表",
         "default": "/",
         "match": "精准查询"
-      },
-      {
-        "name": "账号来源",
-        "type": "下拉列表",
-        "default": "全部",
-        "match": "外部同步/本地创建"
       },
       {
         "name": "状态",
@@ -8903,11 +8861,6 @@ window.PAGES = [
         "name": "角色",
         "description": "已关联角色及其状态",
         "note": "支持多个"
-      },
-      {
-        "name": "数据范围",
-        "description": "用户独立配置的门店、区域公司、工厂、仓库、产品品类、供应商分类六维权限",
-        "note": "与角色权限共同计算"
       },
       {
         "name": "联系方式",
@@ -8974,7 +8927,7 @@ window.PAGES = [
     "actions": [
       {
         "name": "新建用户",
-        "description": "本地账号方案获确认后开放，校验登录标识、组织及必要身份信息",
+        "description": "本地账号方案获确认后开放，校验登录标识及必要身份信息",
         "note": "不显示或保存可读取的明文密码"
       },
       {
@@ -8984,7 +8937,7 @@ window.PAGES = [
       },
       {
         "name": "分配角色/数据范围",
-        "description": "展示调整前后有效权限，确认后保存并记录原因",
+        "description": "根据关联角色的菜单权限显示适用的数据维度。新维度默认不限，停用维度保留原选择。确认后保存并记录原因",
         "note": "不得超范围授权"
       },
       {
@@ -9010,9 +8963,6 @@ window.PAGES = [
       },
       {
         "name": "角色"
-      },
-      {
-        "name": "数据范围"
       },
       {
         "name": "账号来源/状态"
