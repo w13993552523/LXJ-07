@@ -5067,6 +5067,7 @@ window.PAGES = [
       {
         "name": "关联生产商",
         "mode": "table",
+        "search": false,
         "fields": [
           {
             "name": "供应商编码"
@@ -5092,6 +5093,7 @@ window.PAGES = [
       {
         "name": "供应商绩效",
         "mode": "table",
+        "search": false,
         "fields": [
           {
             "name": "时间类型"
@@ -5177,6 +5179,7 @@ window.PAGES = [
       {
         "name": "供应商资质",
         "mode": "table",
+        "search": false,
         "fields": [
           {
             "name": "供应商编码"
@@ -5250,6 +5253,7 @@ window.PAGES = [
       {
         "name": "生产商资质",
         "mode": "table",
+        "search": false,
         "fields": [
           {
             "name": "生产商编码"
@@ -5272,6 +5276,8 @@ window.PAGES = [
       {
         "name": "供货能力明细",
         "mode": "table",
+        "searchFields": ["物料编码", "物料名称"],
+        "searchPlaceholder": "物料编码 / 物料名称",
         "fields": [
           {
             "name": "能力明细ID"
