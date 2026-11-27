@@ -404,6 +404,13 @@ function recentTemperatureRange(hours,end=Math.floor(Date.now()/60000)*60000){
  return {start:end-hours*hourInMs,end};
 }
 function subtableFilterHTML(t,key,view){
+ if(page().id==='store'&&t.name==='门店售卖菜单'){
+  const channels=[['TS01','堂食'],['WX02','堂食扫码点餐'],['MT03','美团外卖'],['EL04','饿了么外卖']];
+  return `<div class="sub-filter" data-detail-table="${esc(key)}">
+   <select id="menu-channel" aria-label="售卖渠道">${channels.map(([code,name])=>
+    `<option value="${code}" ${code===state.menuChannel?'selected':''}>${code}（${name}）</option>`).join('')}</select>
+  </div>`;
+ }
  if(t.search===false)return '';
  const range=t.timeRange;
  let controls;
@@ -412,9 +419,8 @@ function subtableFilterHTML(t,key,view){
   <span class="muted">至</span><input type="datetime-local" data-sub-time="end" aria-label="采集结束时间" value="${localTemperatureTime(view.timeRange.end).slice(0,16).replace(' ','T')}"></div>`;
  else if(t.filters)controls=t.filters.map(({name})=>`<label>${esc(name)} <input data-sub-field="${esc(name)}" placeholder="请输入${esc(name)}" value="${esc(view.fields?.[name])}"></label>`).join('');
  else controls=`<input class="sub-query" aria-label="筛选${esc(t.name)}" placeholder="${esc(t.searchPlaceholder||(t.name==='BOM关系'?'物料编码 / 物料名称 / 批次':'输入关键词筛选明细'))}" value="${esc(view.query)}">`;
- const channel=page().id==='store'&&t.name==='门店售卖菜单'?`<select id="menu-channel">${['TS01（堂食）','WX02（堂食扫码点餐）','MT03（美团外卖）','EL04（饿了么外卖）'].map(x=>`<option value="${x.slice(0,4)}" ${x.startsWith(state.menuChannel)?'selected':''}>${x}</option>`).join('')}</select>`:'';
  return `<div class="sub-filter${range?' warehouse-temperature-filter':''}" data-detail-table="${esc(key)}" ${range?`data-time-max-hours="${range.maxHours}"`:''}>
-  ${channel}${controls}${btn('搜索','sub-search','primary')}${btn('重置','sub-reset','info')}
+  ${controls}${btn('搜索','sub-search','primary')}${btn('重置','sub-reset','info')}
   ${range?`<span class="muted">单次最多查询 ${range.maxHours} 小时（北京时间）</span><p class="error" data-sub-time-error role="alert" hidden></p>`:`<span class="right muted">${t.fields.length} 个字段</span>`}
  </div>`;
 }
@@ -432,13 +438,13 @@ function subtableHTML(t, sourceRows){
  const current=row();
  const demoTemperature=t.timeRange&&sourceRows==null&&!current?._sourceSample;
  // The store workbook contains master data only. Keep the menu example in the detail view.
- const demoStoreMenu=t.searchByDishMaterials&&sourceRows==null&&current?._sourceSample
+ const demoStoreMenu=page().id==='store'&&t.name==='门店售卖菜单'&&sourceRows==null&&current?._sourceSample
   &&!current._sourceDetailRefs?.[t.name]&&!Array.isArray(current._sourceTabs?.[t.name]);
- const dishes=t.searchByDishMaterials&&(demoStoreMenu||view.query)?new Map(records(PAGES.find(p=>p.id==='dish')).map(dish=>[String(dish['成品编码']),dish])):null;
  let allRows=sourceRows??subRows(t,current);
- if(demoStoreMenu)allRows=[...dishes.values()].filter(dish=>!dish._dishTraceCardSample).map((dish,i)=>({
+ if(demoStoreMenu)allRows=[...new Map(records(PAGES.find(p=>p.id==='dish')).map(dish=>[String(dish['成品编码']),dish])).values()]
+  .filter(dish=>!dish._dishTraceCardSample).map((dish,i)=>({
   '菜品ID':sample('菜品ID',i,page()),'菜品编码':dish['成品编码'],'菜品名称':dish['成品名称'],
-  '售卖开始时间':'09:00','售卖结束时间':'21:00','售卖周期':'每日'
+  '菜品类型':dish['菜品类型']||sample('菜品类型',i,page())
  }));
  if(t.timeRange){
   view.temperatureAnchor??=Math.floor(Date.now()/60000)*60000;
@@ -458,16 +464,10 @@ function subtableHTML(t, sourceRows){
    return !query||matchesDisplayText(businessFieldValue(page(),t.fields,record,name),query,match==='精准查询');
   });
   if(!view.query)return true;
-  if(dishes){
-   const dish=dishes.get(String(record['菜品编码']??''));
-   const materials=dish?dishMaterialRelations(dish):[];
-   return [record['原料名称'],record['原料编码'],...materials.flatMap(m=>[m.name,m.code])]
-    .some(value=>matchesDisplayText(value,view.query));
-  }
   if(t.searchFields)return t.searchFields.some(field=>matchesDisplayText(businessFieldValue(page(),t.fields,record,field),view.query));
   return matchesDisplayText(Object.values(record).join(' '),view.query);
  });
- const note=[demoTemperature?'温度记录为演示数据。':'',demoStoreMenu?'当前菜单为演示数据，按菜品关联原料检索。':'',t.note||(!allRows.length?t.emptyNote:'')].filter(Boolean).join(' ');
+ const note=[demoTemperature?'温度记录为演示数据。':'',demoStoreMenu?'当前菜单为演示数据。':'',t.note||(!allRows.length?t.emptyNote:'')].filter(Boolean).join(' ');
  const showDemoChart=!t.timeRange&&/温度/.test(t.name)&&sourceRows==null&&!current?._sourceRevision;
  return `${showDemoChart?chartHTML():''}${subtableFilterHTML(t,key,view)}
  ${tableHTML(page(),pageRows(rows,view),t.fields)}${pagination(rows.length,view,'subtable',key)}${note?`<p class="note">${esc(note)}</p>`:''}`;
@@ -1729,7 +1729,6 @@ document.addEventListener('change',async e=>{const el=e.target,o=state.overlay;
  if(el.id==='menu-channel'){
   state.menuChannel=el.value;
   const view=tableView(state.detailTables,el.closest('[data-detail-table]').dataset.detailTable);
-  view.query='';
   view.pageNo=1;
   renderDetailTable(el);
   return;
