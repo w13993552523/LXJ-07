@@ -8,6 +8,7 @@ function btn(t,a,cls='',extra=''){return `<button class="${cls}" data-act="${a}"
 function ibtn(t,a,ic,cls='',extra=''){return `<button class="btn-icon ${cls}" data-act="${a}" ${extra}>${icon(ic)}${esc(t)}</button>`}
 const groups=[...new Set(PAGES.filter(p=>!p.hiddenFromMenu).map(p=>p.group))];
 const canCreateListRecord=p=>['template','link','alert','consumer','consumer-link','editable','knowledge'].includes(p.kind);
+const canCreateTemplateVersion=p=>p.kind==='template'&&!hasTemplateCoverage(p);
 const groupIcons=['report','shield','template','alert','leaf','farm','box','box','gear','truck','store','user','gear'];
 const state={routeContext:readTemplateRouteContext(),page:'forward',index:0,tab:0,stage:0,expanded:false,filters:{},pageNo:1,size:10,openGroups:new Set(['溯源报告查询中心']),selected:new Set(),overlay:null,detailTables:new Map(),reportTables:new Map(),navQuery:'',menuChannel:'TS01',relationStep:1,editor:null,components:[],componentIndex:0,conditions:[],stageDraft:[]};
 let dataStore={};try{dataStore=JSON.parse((localStorage.getItem('lxj-prototype-v1')||'{}').replace(/蛋品出库/g,'牧场出库'))}catch{}
@@ -262,7 +263,7 @@ function valueCell(name,v,p,i){
  if(v==='—'&&window.LXJ_SOURCE.pages[p.id]?.[0]?._sourceRevision&&['附件地址','附件','预览','下载'].includes(name))return '—';
  if(['预览','附件查看','查看','详情','复制','下载','健康证图片','营业执照','门店营业执照','附件地址','附件','检测附件'].includes(name))return btn(name==='下载'?'下载':'预览',name==='下载'?'download':'attachment','text',`data-name="${esc(name)}"`);
  if(/编码|单号|任务号|ID/.test(name))return `<span class="code">${esc(v)}</span>`;
- if(name==='关联物料'||name==='关联原料'||name==='适用门店')return `<button class="text" data-act="row-action" data-index="${i}" data-label="${name==='关联物料'?'关联物料':name==='适用门店'?'适用门店':'关联原料'}"><span class="truncate" title="${esc(v)}">${esc(v)}</span></button>`;
+ if(name==='适用门店'||p.id!=='dish'&&['关联物料','关联原料'].includes(name))return `<button class="text" data-act="row-action" data-index="${i}" data-label="${esc(name)}"><span class="truncate" title="${esc(v)}">${esc(v)}</span></button>`;
  return `<span class="truncate" title="${esc(v)}">${esc(v)}</span>`;
 }
 function switchHTML(on,act,extra=''){return `<button class="switch ${on?'on':''}" data-act="${act}" role="switch" aria-checked="${on}" ${extra}><span class="switch-track"></span><span class="muted">${on?'启用':'禁用'}</span></button>`}
@@ -278,7 +279,7 @@ function tableHTML(p,rows,fields=p.columns,main=false){
  const hasAction=fields.some(f=>f.name==='操作');
  const ff=main&&!hasAction&&p.uiActions.length&&p.showActionColumn!==false?[...fields,{name:'操作'}]:fields;
  const all=main?dataStore[p.id]:null;
- return `<div class="table-scroll"><table class="data-table"><thead><tr>${main&&p.id==='public-report'?`<th class="check sticky-check"><input type="checkbox" data-public-select-page aria-label="选择本页可关闭报告" ${rows.every(r=>r['报告状态']==='已关闭')?'disabled':''} ${rows.some(r=>r['报告状态']!=='已关闭')&&rows.filter(r=>r['报告状态']!=='已关闭').every(r=>state.closedSelection?.has(r._key))?'checked':''}></th>`:main&&p.kind==='template'?'<th class="check">选择</th>':''}${ff.map((f,i)=>`<th class="${main&&i===0?'sticky-first':''} ${f.name==='操作'?'sticky-action':''}" title="${esc(f.description||f.note||f.name)}">${esc(f.label||f.name)}</th>`).join('')}</tr></thead><tbody>${rows.length?rows.map((r,k)=>`<tr>${main&&p.id==='public-report'?`<td class="check sticky-check"><input type="checkbox" data-public-key="${esc(r._key)}" aria-label="选择报告 ${esc(r['消费者溯源报告编码'])}" ${state.closedSelection?.has(r._key)?'checked':''} ${r['报告状态']==='已关闭'?'disabled':''}></td>`:''}${main&&p.kind==='template'?`<td class="check"><input type="radio" name="template-choice" data-act="select-template" value="${all.indexOf(r)}" ${state.templateChoice===all.indexOf(r)?'checked':''} aria-label="选择模板"></td>`:''}${ff.map((f,i)=>`<td class="${main&&i===0?'sticky-first':''} ${f.name==='操作'?'sticky-action':''}">${main&&(p.id==='public-report'?f.name==='消费者溯源报告编码':i===0)&&p.uiActions.length&&p.linkFirstColumn!==false?`<button class="text code" data-act="row-action" data-index="${all.indexOf(r)}" data-label="查看">${esc(r[f.name])}</button>`:valueCell(f.name,businessFieldValue(p,ff,r,f.name),p,main?all.indexOf(r):k)}</td>`).join('')}</tr>`).join(''):`<tr><td colspan="${ff.length}" class="empty">暂无符合条件的数据</td></tr>`}</tbody></table></div>`;
+ return `<div class="table-scroll"><table class="data-table"><thead><tr>${main&&p.id==='public-report'?`<th class="check sticky-check"><input type="checkbox" data-public-select-page aria-label="选择本页可关闭报告" ${rows.every(r=>r['报告状态']==='已关闭')?'disabled':''} ${rows.some(r=>r['报告状态']!=='已关闭')&&rows.filter(r=>r['报告状态']!=='已关闭').every(r=>state.closedSelection?.has(r._key))?'checked':''}></th>`:main&&canCreateTemplateVersion(p)?'<th class="check">选择</th>':''}${ff.map((f,i)=>`<th class="${main&&i===0?'sticky-first':''} ${f.name==='操作'?'sticky-action':''}" title="${esc(f.description||f.note||f.name)}">${esc(f.label||f.name)}</th>`).join('')}</tr></thead><tbody>${rows.length?rows.map((r,k)=>`<tr>${main&&p.id==='public-report'?`<td class="check sticky-check"><input type="checkbox" data-public-key="${esc(r._key)}" aria-label="选择报告 ${esc(r['消费者溯源报告编码'])}" ${state.closedSelection?.has(r._key)?'checked':''} ${r['报告状态']==='已关闭'?'disabled':''}></td>`:''}${main&&canCreateTemplateVersion(p)?`<td class="check"><input type="radio" name="template-choice" data-act="select-template" value="${all.indexOf(r)}" ${state.templateChoice===all.indexOf(r)?'checked':''} aria-label="选择模板"></td>`:''}${ff.map((f,i)=>`<td class="${main&&i===0?'sticky-first':''} ${f.name==='操作'?'sticky-action':''}">${main&&(p.id==='public-report'?f.name==='消费者溯源报告编码':i===0)&&p.uiActions.length&&p.linkFirstColumn!==false?`<button class="text code" data-act="row-action" data-index="${all.indexOf(r)}" data-label="查看">${esc(r[f.name])}</button>`:valueCell(f.name,businessFieldValue(p,ff,r,f.name),p,main?all.indexOf(r):k)}</td>`).join('')}</tr>`).join(''):`<tr><td colspan="${ff.length}" class="empty">暂无符合条件的数据</td></tr>`}</tbody></table></div>`;
 }
 function control(f,v='',readonly=false,scope='filter'){
  const name=f.name,opts=options(name,page());
@@ -380,7 +381,7 @@ function listHTML(p){
  const add=editable?ibtn(p.kind==='knowledge'?'上传文档':'新增','new','plus','primary'):'';
  return headingHTML(p,p.name,p.description,ibtn('刷新','refresh','refresh','plain'))+
  (p.id==='knowledge'?`<section class="panel"><div class="section-title">外部平台入口</div><div class="external-links">${btn('法规知识库 · 待配置','external','plain')}${btn('风险评估 · 待配置','external','plain')}</div></section>`:'')+
- filtersHTML(p)+`<section class="panel ${p.id==='public-report'?'public-report-list':''}" data-list-page="${esc(p.id)}">${p.id==='public-report'?publicReportSelectionHTML():''}<div class="table-toolbar"><h2>${esc(p.kind==='report'?'溯源报告列表':p.name+'列表')}</h2><span class="muted">${window.LXJ_SOURCE.pages[p.id]?'按业务源表结构展示演示数据':p.kind==='report'?'按批次归集 · 仅供查看':p.kind==='readonly'?'源系统同步数据':''}</span>${add}${p.id==='consumer'?btn('评价模板配置','survey-open','plain'):''}${p.id==='dish-display'?btn('按原料批量关闭展示','material-batch-open','primary'):''}${p.id==='location'?btn('批量添加','batch-import','plain'):''}${p.id==='warehouse'&&window.LXJ_SOURCE.warehouseStorage?btn('仓储存储记录','warehouse-storage','plain'):''}${p.kind==='template'?btn('新增版本','new-version','plain'):''}</div>${tableHTML(p,pageRows(rows,state),p.columns,true)}${pagination(rows.length)}</section><p class="note">当前展示为原型演示数据；${['readonly','report','consumer-report'].includes(p.kind)?'业务事实以源系统数据为准。':'配置操作保存在本机浏览器，可用于交互评审。'}</p>`;
+ filtersHTML(p)+`<section class="panel ${p.id==='public-report'?'public-report-list':''}" data-list-page="${esc(p.id)}">${p.id==='public-report'?publicReportSelectionHTML():''}<div class="table-toolbar"><h2>${esc(p.kind==='report'?'溯源报告列表':p.name+'列表')}</h2><span class="muted">${window.LXJ_SOURCE.pages[p.id]?'按业务源表结构展示演示数据':p.kind==='report'?'按批次归集 · 仅供查看':p.kind==='readonly'?'源系统同步数据':''}</span>${add}${p.id==='consumer'?btn('评价模板配置','survey-open','plain'):''}${p.id==='dish-display'?btn('按原料批量关闭展示','material-batch-open','primary'):''}${p.id==='location'?btn('批量添加','batch-import','plain'):''}${p.id==='warehouse'&&window.LXJ_SOURCE.warehouseStorage?btn('仓储存储记录','warehouse-storage','plain'):''}${canCreateTemplateVersion(p)?btn('新增版本','new-version','plain'):''}</div>${tableHTML(p,pageRows(rows,state),p.columns,true)}${pagination(rows.length)}</section><p class="note">当前展示为原型演示数据；${['readonly','report','consumer-report'].includes(p.kind)?'业务事实以源系统数据为准。':'配置操作保存在本机浏览器，可用于交互评审。'}</p>`;
 }
 function infoHTML(fields,r){return `<div class="info-grid">${fields.filter(f=>f.name!=='操作').map(f=>`<div class="info-item"><label>${esc(f.name)}</label><div class="value">${valueCell(f.name,businessFieldValue(page(),fields,r,f.name),page(),state.index)}</div></div>`).join('')}</div>`}
 function panel(title,body,tools=''){return `<section class="panel"><div class="section-title">${esc(title)}${tools?`<span class="right">${tools}</span>`:''}</div>${body}</section>`}
@@ -405,10 +406,12 @@ function recentTemperatureRange(hours,end=Math.floor(Date.now()/60000)*60000){
 function subtableFilterHTML(t,key,view){
  if(t.search===false)return '';
  const range=t.timeRange;
- const controls=range?`<span>${esc(range.field)}</span><div class="date-range">
+ let controls;
+ if(range)controls=`<span>${esc(range.field)}</span><div class="date-range">
   <input type="datetime-local" data-sub-time="start" aria-label="采集开始时间" value="${localTemperatureTime(view.timeRange.start).slice(0,16).replace(' ','T')}">
-  <span class="muted">至</span><input type="datetime-local" data-sub-time="end" aria-label="采集结束时间" value="${localTemperatureTime(view.timeRange.end).slice(0,16).replace(' ','T')}"></div>`:
-  `<input class="sub-query" aria-label="筛选${esc(t.name)}" placeholder="${esc(t.searchPlaceholder||(t.name==='BOM关系'?'物料编码 / 物料名称 / 批次':'输入关键词筛选明细'))}" value="${esc(view.query)}">`;
+  <span class="muted">至</span><input type="datetime-local" data-sub-time="end" aria-label="采集结束时间" value="${localTemperatureTime(view.timeRange.end).slice(0,16).replace(' ','T')}"></div>`;
+ else if(t.filters)controls=t.filters.map(({name})=>`<label>${esc(name)} <input data-sub-field="${esc(name)}" placeholder="请输入${esc(name)}" value="${esc(view.fields?.[name])}"></label>`).join('');
+ else controls=`<input class="sub-query" aria-label="筛选${esc(t.name)}" placeholder="${esc(t.searchPlaceholder||(t.name==='BOM关系'?'物料编码 / 物料名称 / 批次':'输入关键词筛选明细'))}" value="${esc(view.query)}">`;
  const channel=page().id==='store'&&t.name==='门店售卖菜单'?`<select id="menu-channel">${['TS01（堂食）','WX02（堂食扫码点餐）','MT03（美团外卖）','EL04（饿了么外卖）'].map(x=>`<option value="${x.slice(0,4)}" ${x.startsWith(state.menuChannel)?'selected':''}>${x}</option>`).join('')}</select>`:'';
  return `<div class="sub-filter${range?' warehouse-temperature-filter':''}" data-detail-table="${esc(key)}" ${range?`data-time-max-hours="${range.maxHours}"`:''}>
   ${channel}${controls}${btn('搜索','sub-search','primary')}${btn('重置','sub-reset','info')}
@@ -417,8 +420,8 @@ function subtableFilterHTML(t,key,view){
 }
 function subtableHTML(t, sourceRows){
  if(t.mode==='material-trace-card')return materialTraceCardHTML(row());
+ if(t.mode==='dish-trace-card')return dishTraceCardHTML(row());
  if(t.mode==='trace-cards')return traceCardListHTML();
- if(t.mode==='dish-craft')return dishCraftHTML();
  if(page().id==='dish'&&t.name==='BOM关系')return tableHTML(page(),dishMaterialRelations(row()).map(m=>({'父项编码':row()['成品编码'],'子项编码':m.code,'物料编码':m.code,'物料名称':m.name,'数量':'按有效配方','单位':'kg','BOM版本':'V1.0','生效开始时间':'2026-09-01','生效结束时间':'—','门店编码':'适用门店','映射状态':'已关联'})),t.fields);
  if(row()?._sourceSample&&t.mode==='info'&&!t.fields.some(f=>row()[f.name]))return '<div class="empty">暂无此项演示数据</div>';
  if(!t.fields.length)return `<div class="empty">${icon('empty')}<div>${row()?._sourceSample?'暂无此项演示数据':'暂无已接入数据'}</div><p class="note">${esc(t.note||'具体字段待源接口清单提供')}</p></div>`;
@@ -433,7 +436,7 @@ function subtableHTML(t, sourceRows){
   &&!current._sourceDetailRefs?.[t.name]&&!Array.isArray(current._sourceTabs?.[t.name]);
  const dishes=t.searchByDishMaterials&&(demoStoreMenu||view.query)?new Map(records(PAGES.find(p=>p.id==='dish')).map(dish=>[String(dish['成品编码']),dish])):null;
  let allRows=sourceRows??subRows(t,current);
- if(demoStoreMenu)allRows=[...dishes.values()].map((dish,i)=>({
+ if(demoStoreMenu)allRows=[...dishes.values()].filter(dish=>!dish._dishTraceCardSample).map((dish,i)=>({
   '菜品ID':sample('菜品ID',i,page()),'菜品编码':dish['成品编码'],'菜品名称':dish['成品名称'],
   '售卖开始时间':'09:00','售卖结束时间':'21:00','售卖周期':'每日'
  }));
@@ -449,7 +452,12 @@ function subtableHTML(t, sourceRows){
    const stamp=temperatureTimestamp(record[t.timeRange.field]);
    return stamp>=view.timeRange.start&&stamp<=view.timeRange.end;
   }
-  if(t.search===false||!view.query)return true;
+  if(t.search===false)return true;
+  if(t.filters)return t.filters.every(({name,match})=>{
+   const query=view.fields?.[name];
+   return !query||matchesDisplayText(businessFieldValue(page(),t.fields,record,name),query,match==='精准查询');
+  });
+  if(!view.query)return true;
   if(dishes){
    const dish=dishes.get(String(record['菜品编码']??''));
    const materials=dish?dishMaterialRelations(dish):[];
@@ -485,7 +493,9 @@ function applySubtableSearch(control,reset){
   }
   view.timeRange=range;
  }else{
-  view.query=reset?'':$('.sub-query',filter).value.trim();
+  const fields=$$('[data-sub-field]',filter);
+  if(fields.length)view.fields=reset?{}:Object.fromEntries(fields.map(input=>[input.dataset.subField,input.value.trim()]));
+  else view.query=reset?'':$('.sub-query',filter).value.trim();
  }
  view.pageNo=1;
  renderDetailTable(control);
@@ -1113,7 +1123,7 @@ function templateScopeError(p,r,key,previous=null){
 function openTemplateCoverage(p,record){
  const saved=templateAssociationRows(p,record,'原料');
  const materials=new Map([...templateMasterAssociations('原料'),...saved].map(item=>[String(item.code),item]));
- const dishes=new Map(records(PAGES.find(menu=>menu.id==='dish')).map(dish=>[String(dish['成品编码']),dish]));
+ const dishes=new Map(records(PAGES.find(menu=>menu.id==='dish')).filter(dish=>!dish._dishTraceCardSample).map(dish=>[String(dish['成品编码']),dish]));
  const groups=[...dishes].map(([code,dish])=>({code,name:dish['成品名称'],
   materials:[...new Set(dishMaterialRelations(dish).map(item=>String(item.code)))].filter(code=>materials.has(code))}));
  const groupedMaterials=new Set(groups.flatMap(group=>group.materials));
@@ -1485,7 +1495,7 @@ function rowAction(label,index){const p=page();state.index=index;state.tab=0;sta
  if(['查看','详情','查看详情'].includes(label)){if(p.kind==='knowledge'&&row()._file){openOverlay('文档预览',`<iframe src="${row()._file.content}" title="文档预览" style="width:100%;height:60vh;border:0"></iframe>`,btn('关闭','close-overlay','plain'),'drawer');return}if(p.detailMode==='page')navigate(p.id,'detail',index);else detailOverlay(index);return}
  if(label==='编辑'){if(p.kind==='knowledge'){knowledgeModal(false);return}if(['template','link','alert','consumer','consumer-link'].includes(p.kind)){state.editor=null;navigate(p.id,'detail',index)}else editModal(p);return}
  if(p.id==='material'&&['关联溯源卡','关联原料溯源卡'].includes(label)){detailOverlay(index,p.tabs.findIndex(t=>t.mode==='material-trace-card'));return}
- if(label==='关联溯源卡'&&['semi','dish'].includes(p.id)){openTraceCards();return}
+ if(label==='关联溯源卡'&&p.id==='semi'){openTraceCards();return}
  if(['投料明细','工序报告','关联溯源卡','关联物料','关联门店','配置历史'].includes(label)){const target=label==='关联物料'?'BOM关系':label;detailOverlay(index,Math.max(0,p.tabs.findIndex(t=>t.name===target)));return}
  if(label==='关联溯源模板'){if(p.id==='overview'){navigate('overview','detail',index);return}navigate('material-template',records(p)[index]['是否配置溯源模板']==='否'?'new':'detail');return}
  if(label==='关联原料'){detailOverlay(index);if(p.id==='overview'){const tt=PAGES.find(p=>p.id==='dish').tabs.find(t=>t.name==='BOM关系');openOverlay('关联原料 · BOM关系',tableHTML(p,subRows(tt),tt.fields),btn('关闭','close-overlay','plain'),'drawer')}return}
@@ -1499,7 +1509,8 @@ function rowAction(label,index){const p=page();state.index=index;state.tab=0;sta
  if(label==='最佳赏味期'){openOverlay('最佳赏味期设置',`<p>菜品名称：${esc(row()['菜品名称'])}</p><div class="field"><label><span class="required">*</span>最佳赏味期（天）</label><input id="taste-days" type="number" min="1" step="1" value="${esc(row()['最佳赏味期']||7)}"></div><p class="note">超出配置的赏味期后，消费者端隐藏对应菜品溯源信息。</p>`,btn('保存','taste-save','primary')+btn('取消','close-overlay','plain'),'dialog','taste');return}
  if(label==='原料显示配置'){openSingleMaterialDisplay();return}
  if(label==='菜品图片'){openOverlay('菜品图片',`<p>菜品名称：${esc(row()['菜品名称'])}</p><div class="field"><label>菜单图片（1:1，≤200KB）</label><input type="file" data-upload="menu-image" accept="image/jpeg,image/png,image/webp"></div><div class="field" style="margin-top:20px"><label>溯源详情图片（1:1，≤2MB）</label><input type="file" data-upload="detail-image" accept="image/jpeg,image/png,image/webp"></div><div id="image-previews"></div>`,btn('保存','images-save','primary')+btn('取消','close-overlay','plain'),'dialog','images');return}
- if(label==='配置权限'||label==='分配角色/数据范围'){permissions(p);return}
+ if(label==='配置权限'||label==='分配角色'){permissions(p);return}
+ if(p.id==='user'&&label==='数据权限赋权'){openDataPermissions(row());return}
  if(label==='查看任务日志'){detailOverlay(index,0);return}
  if(label==='发起重建'||label==='重试失败任务'){if(label==='重试失败任务'&&row()['运行状态']!=='异常'){toast('当前无失败任务可重试');return}openOverlay(label,`<p>索引：${esc(row()['索引编码/名称'])}</p><div class="field"><label>重建范围</label><select id="rebuild-scope"><option>当前业务对象 · 增量</option><option>当前业务对象 · 全量</option></select></div><div class="field" style="margin-top:16px"><label>原因</label><textarea id="rebuild-reason"></textarea></div><p class="note">将生成演示任务，保留源业务数据。</p>`,btn('确认发起','rebuild-save','primary')+btn('取消','close-overlay','plain'));return}
  if(label==='重新生成'){openOverlay('重新生成消费者报告',`<p>按当前关联的消费者模板 ${esc(row()['消费者模板编码'])} / ${esc(row()['消费者模板版本'])} 重新生成演示报告？</p>`,btn('确认重新生成','regenerate-report','primary')+btn('取消','close-overlay','plain'));return}
@@ -1684,7 +1695,7 @@ document.addEventListener('click',e=>{
  if(act==='batch-template'){download('\ufeff门店编码,门店名称,库存地点编码,库存地点名称,库存地点类型,库存地点说明\n5141,合肥政务万达店,51410001,冷冻库A01,冷冻库,冷冻原料存储\n','库存地点导入模板.csv');return}
  if(act==='batch-save'){if(!state.batchRows?.length){toast('请先上传有效CSV');return}records(p).unshift(...state.batchRows);persist();closeOverlay();render();toast('已导入 '+state.batchRows.length+' 条库存地点');return}
  if(act==='reset-data'){openOverlay('恢复演示数据','<p>将清除本原型保存在当前浏览器中的配置，重新生成演示记录。</p>',btn('恢复','confirm-reset','danger')+btn('取消','close-overlay','plain'));return}
- if(act==='confirm-reset'){dataStore={};localStorage.removeItem('lxj-prototype-v1');state.editor=null;closeOverlay();navigate(p.id);toast('演示数据已恢复');return}
+ if(act==='confirm-reset'){dataStore={};localStorage.removeItem('lxj-prototype-v1');Object.keys(localStorage).filter(key=>key.startsWith(scopeStoragePrefix)).forEach(key=>localStorage.removeItem(key));state.editor=null;closeOverlay();navigate(p.id);toast('演示数据已恢复');return}
  if(act==='knowledge-save'){saveKnowledge();return}
 });
 document.addEventListener('input',e=>{const el=e.target;if(el.hasAttribute('data-route-progress')){controlDeliveryRoute(el,'seek');return}if(page().kind==='alert'&&['配置名称','配置说明'].includes(el.name)){const counter=$('[data-count-for="'+el.name+'"]');if(counter)counter.textContent=el.value.length+' / '+el.maxLength;}if(el.id==='nav-query'){state.navQuery=el.value;const pos=el.selectionStart;render();$('#nav-query').focus();$('#nav-query').setSelectionRange(pos,pos)}if(el.dataset.setting)settingsChanged(el);if(el.dataset.cond)state.conditions[Number(el.dataset.num)][el.dataset.cond]=el.value;});
@@ -1750,7 +1761,7 @@ document.addEventListener('keydown',e=>{
  if(el.id==='batch-material-query'){e.preventDefault();$('[data-act=material-batch-search]').click()}
  if(['association-code','association-name'].includes(el.id)){e.preventDefault();$('[data-act="association-search"]').click()}
  if(['import-object-name','import-link-name'].includes(el.id)){e.preventDefault();$('[data-act="import-link-search"]').click()}
- if(el.matches('.sub-query,[data-sub-time]')){e.preventDefault();$('[data-act="sub-search"]',el.closest('[data-detail-table]')).click()}
+ if(el.matches('.sub-query,[data-sub-time],[data-sub-field]')){e.preventDefault();$('[data-act="sub-search"]',el.closest('[data-detail-table]')).click()}
  if(el.dataset.act==='jump-page'){e.preventDefault();updatePagination(el,Number(el.value))}
 });
 
@@ -2269,6 +2280,7 @@ function normalizeConsumerReport(r,i){
 }
 
 function normalizeMaterialMaster(p,rows){
+ if(p.id==='dish')addDishTraceCardSamples(rows);
  if(p.id==='material'&&!rows.some(r=>r._key==='material-black-layer')){
   rows.push({_key:'material-black-layer','原料编码':'DEMO-HQC-001','原料名称':'黑千层，600G/包',
    '原料分类':'速冻食品','基本单位':'包','基本单位描述':'每包净含量600g','物料类型':'ROH','物料类型描述':'原料',
@@ -2276,6 +2288,7 @@ function normalizeMaterialMaster(p,rows){
    '是否配置溯源模板':'否','状态':'启用','最后更新时间':'—'});
  }
  for(const r of rows){
+  if(r._dishTraceCardSample)continue;
   const unit=r['基本单位']&&r['基本单位']!=='—'?r['基本单位']:p.id==='material'?'kg':'份';
   const demo={'基本单位':unit,'基本单位描述':({kg:'千克','份':'份','包':'包装单位'})[unit]||unit,
    '物料类型':p.id==='material'?'ROH':'FERT','物料类型描述':p.id==='material'?'原料':'成品',
