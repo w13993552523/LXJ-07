@@ -119,16 +119,18 @@ function consumerVisibleMaterials(r=row()){
  return materials.filter(m=>visible.includes(m.code));
 }
 function consumerPreviewMaterial(){const available=consumerVisibleMaterials();return available.find(m=>Number(m.code.slice(-1))===state.publicMaterial)||available[0]||null;}
-function dishCraftHTML(){
- const r=row(),name=r['成品名称']||'菜品',n=Number(String(r['成品编码']||'0').slice(-1))%6;
- const methods=['炖制','蒸制','煨煮','烧制','焖制','组合出餐'],method=methods[n];
- const steps=[['备料','按菜品配方核对原料名称、规格和用量','操作台 / 备料容器','按标准完成清洗、分切及备料'],[method,`按${name}作业规范进行${method}`,'对应烹饪设备','火力、时间及中心温度按已发布作业标准执行'],['出餐','核对成品状态后按份装盘','出餐器具','检查色泽、口感、份量与摆盘，完成出餐复核']];
- const fields={'工艺编号':'GY-DEMO-'+r['成品编码'],'工艺版本':'V1.0','菜品名称':name,'加工方式':method,'适用场景':'门店制作与出餐','单份配方基准':'1份（演示）','主要设备':'按门店设备清单配置','标准用时':'待工艺标准确认','质量控制点':'熟制状态、感官、份量与交叉污染控制','出餐要求':'按菜品摆盘规范及时出餐','更新时间':'2026-10-23 10:00:00','编制部门':'产品研发部（演示）'};
- return `<p class="note">以下为原型示例工艺字段与步骤，实际加工参数以已发布作业标准为准。</p>${infoHTML(Object.keys(fields).map(name=>({name})),fields)}<div class="section-title">加工步骤</div><div class="table-scroll"><table class="data-table craft-table"><thead><tr><th>步骤</th><th>工序名称</th><th>操作说明</th><th>使用设备 / 工具</th><th>关键控制要求</th></tr></thead><tbody>${steps.map((s,i)=>`<tr><td>${i+1}</td>${s.map(v=>`<td>${esc(v)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+function traceCardSections(sections){
+ const valueOrDash=value=>value==null||value===''?'—':value;
+ return '<div class="material-card-sections">'+sections.filter(([,entries])=>entries?.length).map(([title,entries,headers])=>{
+  if(!headers)return panel(title,`<dl class="info-grid material-card-fields">${entries.map(([name,value,wide])=>`<div class="info-item${wide?' trace-card-wide':''}"><dt>${esc(name)}</dt><dd class="value">${esc(valueOrDash(value))}</dd></div>`).join('')}</dl>`);
+  const fields=headers.map(name=>({name}));
+  const rows=entries.map(values=>Object.fromEntries(headers.map((name,i)=>[name,valueOrDash(values[i])])));
+  return panel(title,tableHTML(page(),rows,fields));
+ }).join('')+'</div>';
 }
 
 function materialCardDetails(card){
- const sections=[
+ return traceCardSections([
   ['基本信息',card.basics],
   ['感官指标',card.sensory,['项目','标准']],
   ['检验指标',card.inspections,['项目','限制','执行标准','检测方法']],
@@ -137,13 +139,46 @@ function materialCardDetails(card){
   ['供应商信息',card.supplier],
   ['包装标签',card.label],
   ['营养成分表',card.nutrition,['项目','每100g','NRV%']]
- ];
- return '<div class="material-card-sections">'+sections.filter(([,entries])=>entries?.length).map(([title,entries,headers])=>{
-  if(!headers)return panel(title,`<dl class="info-grid material-card-fields">${entries.map(([name,value])=>`<div class="info-item"><dt>${esc(name)}</dt><dd class="value">${esc(value||'—')}</dd></div>`).join('')}</dl>`);
-  const fields=headers.map(name=>({name}));
-  const rows=entries.map(values=>Object.fromEntries(headers.map((name,i)=>[name,values[i]||'—'])));
-  return panel(title,tableHTML(page(),rows,fields));
- }).join('')+'</div>';
+ ]);
+}
+
+function dishTraceCardFor(record){
+ const codes=[record['成品编码'],record['菜品编码'],record['SAP编码']].map(code=>String(code??''));
+ return (window.LXJ_DISH_TRACE_CARDS||[]).find(card=>codes.includes(card.dishCode)||codes.includes(card.sapCode));
+}
+
+function addDishTraceCardSamples(rows){
+ const cards=window.LXJ_DISH_TRACE_CARDS||[];
+ if(!cards.length)return;
+ const linked=new Set();
+ for(const row of rows){
+  const card=dishTraceCardFor(row);
+  row['是否有溯源卡']=card?'是':'否';
+  if(card)linked.add(card.dishCode);
+ }
+ rows.unshift(...cards.filter(card=>!linked.has(card.dishCode)).map(card=>({
+  _key:'dish-plm-'+card.dishCode,_sourceSample:true,_dishTraceCardSample:true,_materialCodes:[],
+  '成品编码':card.dishCode,'成品名称':card.dishName,'SAP编码':card.sapCode,'是否有溯源卡':'是',
+  '关联物料':card.origins.map(origin=>origin.material).join('、'),'最后更新时间':card.updatedAt
+ })));
+}
+
+function dishTraceCardHTML(r){
+ const card=dishTraceCardFor(r);
+ if(!card)return '<div class="empty">暂无菜品溯源卡</div>';
+ const codedLabel=entry=>entry.code&&entry.name!==entry.code?`${entry.name}（${entry.code}）`:entry.name;
+ const basics=[['菜品名称',card.dishName],['菜品编码',card.dishCode],['SAP编码',card.sapCode],['菜品图片',card.image],['菜品备注',card.remark]];
+ if(card.productName&&card.productName!==card.dishName)basics.splice(1,0,['PLM名称',card.productName]);
+ return traceCardSections([
+  ['基本信息',basics],
+  ['配料与制作',[['份数',card.portions],['烹饪方式',codedLabel(card.cooking)],['加工等级',codedLabel(card.level)],
+   ['味型',codedLabel(card.flavour)],['最佳风味期',card.bestFlavour],['配料',card.ingredients,true],['制作工艺',card.craft,true]]],
+  ['原料配送',[['原料配送方式',codedLabel(card.delivery)],['每24小时配送门店',card.delivery24],['每48小时配送门店',card.delivery48]]],
+  ['营养成分',card.nutrition.map(({item,value,unit})=>[item,value,unit]),['项目','数值','单位']],
+  ['原料来源',card.origins.map(({material,suppliers})=>[material,suppliers]),['原料','供应商']],
+  ['原料加工',card.processing.map(({material,procedures})=>[material,procedures]),['原料','加工工序']],
+  ['维护信息',[['来源系统','PLM'],['溯源卡ID',card.id],['表单编码',card.formCode],['创建时间',card.createdAt],['更新时间',card.updatedAt]]]
+ ]);
 }
 
 function materialTraceCardHTML(r){

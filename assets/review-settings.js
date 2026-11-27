@@ -22,13 +22,13 @@ function normalizeFeedback(r,i){if(r._surveySnapshot){updateFeedbackFields(r);re
  r['问卷版本']='旧版（无结构快照）';r['评价来源']='历史原型数据';r['评价时间']=r['溯源时间'];if(!r['评价内容']||r['评价内容']==='—'||r['评价内容']==='原型演示记录')r['评价内容']='暂无结构化回答，可使用评价预览提交一条演示记录';
 }
 function feedbackDetailHTML(p,r){const fields=p.columns.filter(f=>!['操作','评价内容'].includes(f.name));const s=r._surveySnapshot;return panel('评价基本信息',infoHTML(fields,r))+panel('评价内容',s?`<div class="feedback-answers"><h3>${esc(s.title)}</h3><p class="note">按评价提交时的问卷结构展示，后续模板增删题不影响本记录。</p>${s.questions.map((q,i)=>{const a=r._surveyAnswers.find(a=>a.questionId===q.id);return `<section class="survey-question"><div class="feedback-question-head"><strong>Q${i+1}. ${esc(q.title)}</strong><span class="status">${surveyTypeLabel(q)}</span><span class="muted">${q.required?'必答':'选答'}</span></div>${q.options?`<p class="note">当时选项：${q.options.map(esc).join(' / ')}</p>`:''}<p class="feedback-answer">${esc(answerText(a))}${q.type==='rating'&&a?.value!=null?' / 5星':''}</p></section>`}).join('')}</div>`:`<div class="feedback-answers"><p>${esc(r['评价内容']||'暂无回答')}</p><p class="note">旧记录未保存题目结构，保留原始内容，不将旧回答对应到新问题。</p></div>`);}
-function permissionCatalog(){const leaf=(id,label)=>({id,label});const stores=storeNames.map((name,i)=>leaf('store-'+i,name));return [
- {id:'stores',name:'门店',nodes:[{id:'region-ah',label:'安徽区域',children:[{id:'team-hf',label:'合肥战队',children:[stores[0],stores[4]]}]},{id:'region-js',label:'江苏区域',children:[{id:'team-nj',label:'南京战队',children:[stores[1],stores[5]]}]},{id:'region-east',label:'沪杭区域',children:[{id:'team-sh',label:'上海战队',children:[stores[2]]},{id:'team-hz',label:'杭州战队',children:[stores[3]]}]}]},
- {id:'companies',name:'区域公司（组织架构）',nodes:[{id:'org-root',label:'老乡鸡集团',children:[{id:'org-east',label:'华东事业部',children:[leaf('co-ah','安徽区域公司'),leaf('co-js','江苏区域公司'),leaf('co-sh','上海区域公司'),leaf('co-zj','浙江区域公司')]}]}]},
- {id:'factories',name:'工厂',nodes:['合肥食品工厂','南京食品工厂','上海食品工厂'].map((n,i)=>leaf('factory-'+i,n))},
- {id:'warehouses',name:'仓库',nodes:['合肥仓储中心','南京仓储中心','上海仓储中心'].map((n,i)=>leaf('warehouse-'+i,n))},
- {id:'products',name:'产品品类',nodes:[{id:'food',label:'食品品类',children:['禽肉类','蛋品类','蔬菜类','粮油类','豆制品类'].map((n,i)=>leaf('product-'+i,n))}]},
- {id:'suppliers',name:'供应商分类',nodes:[{id:'supplier-root',label:'供应商分类',children:['农牧类供应商','食材类供应商','包材类供应商','物流服务商'].map((n,i)=>leaf('supplier-'+i,n))}]},
+function permissionCatalog(){const leaf=(id,label)=>({id,label});const store=i=>leaf('store-'+i,storeNames[i]);return [
+ {id:'stores',name:'门店',options:()=>[{id:'region-ah',label:'安徽区域',children:[{id:'team-hf',label:'合肥战队',children:[store(0),store(4)]}]},{id:'region-js',label:'江苏区域',children:[{id:'team-nj',label:'南京战队',children:[store(1),store(5)]}]},{id:'region-east',label:'沪杭区域',children:[{id:'team-sh',label:'上海战队',children:[store(2)]},{id:'team-hz',label:'杭州战队',children:[store(3)]}]}]},
+ {id:'companies',name:'区域公司（组织架构）',options:()=>[{id:'org-root',label:'老乡鸡集团',children:[{id:'org-east',label:'华东事业部',children:[leaf('co-ah','安徽区域公司'),leaf('co-js','江苏区域公司'),leaf('co-sh','上海区域公司'),leaf('co-zj','浙江区域公司')]}]}]},
+ {id:'factories',name:'工厂',options:()=>['合肥食品工厂','南京食品工厂','上海食品工厂'].map((n,i)=>leaf('factory-'+i,n))},
+ {id:'warehouses',name:'仓库',options:()=>['合肥仓储中心','南京仓储中心','上海仓储中心'].map((n,i)=>leaf('warehouse-'+i,n))},
+ {id:'products',name:'产品品类',options:()=>[{id:'food',label:'食品品类',children:['禽肉类','蛋品类','蔬菜类','粮油类','豆制品类'].map((n,i)=>leaf('product-'+i,n))}]},
+ {id:'suppliers',name:'供应商分类',options:()=>[{id:'supplier-root',label:'供应商分类',children:['农牧类供应商','食材类供应商','包材类供应商','物流服务商'].map((n,i)=>leaf('supplier-'+i,n))}]},
  {id:'externalSupplier',name:'外部供应商',single:true}
  ];}
 const rolePermissionExamples=[
@@ -106,12 +106,12 @@ function roleMenuGrants(role){
  }));
 }
 
-function userRoleIds(user){
+function userRoleIds(user,roles=permissionRoles()){
  const saved=user._permissions?.roles;
  if(Array.isArray(saved))return [...new Set(saved)];
  const names=String(user['角色']||'').split(/[、，,]/).map(name=>name.trim());
  return names.flatMap(name=>{
-  const matches=permissionRoles().filter(role=>role['角色名称']===name);
+  const matches=roles.filter(role=>role['角色名称']===name);
   const role=matches.length===1?matches[0]:matches.find(r=>r._key==='role-0'&&name===rolePermissionExamples[0].name);
   return role?[role._key]:[];
  });
@@ -126,8 +126,8 @@ function userRoleLabels(user){
  return names.length?names:['未分配'];
 }
 
-function activePermissionDimensions(roleIds){
- const roles=permissionRoles().filter(role=>role['状态']==='启用'&&roleIds.includes(role._key));
+function activePermissionDimensions(roleIds,roleRecords=permissionRoles()){
+ const roles=roleRecords.filter(role=>role['状态']==='启用'&&roleIds.includes(role._key));
  const menus=new Set(roles.flatMap(role=>Object.keys(roleMenuGrants(role))));
  const dimensions=Object.entries(menuDataDimensions).filter(([,ids])=>ids.some(id=>menus.has(id))).map(([id])=>id);
  if(roles.some(isExternalSupplierRole))dimensions.push('externalSupplier');
@@ -135,11 +135,14 @@ function activePermissionDimensions(roleIds){
 }
 
 function userPermissionDraft(user){
+ return {...userPermissionOutline(user),dimensions:structuredClone(user._permissions?.dimensions||{})};
+}
+
+function userPermissionOutline(user){
  const saved=user._permissions||{};
  const roles=userRoleIds(user);
- const dimensions=structuredClone(saved.dimensions||{});
- const seenDimensions=[...new Set([...(saved.seenDimensions||Object.keys(dimensions)),...activePermissionDimensions(roles)])];
- return {roles,dimensions,seenDimensions};
+ const seenDimensions=[...new Set([...(saved.seenDimensions||Object.keys(saved.dimensions||{})),...activePermissionDimensions(roles)])];
+ return {roles,seenDimensions};
 }
 
 function rememberActiveDimensions(draft){
@@ -242,81 +245,208 @@ function externalSupplierLabel(code,options=externalSupplierOptions()){
  return supplier?`${supplier.name||'名称未提供'}（${code}）`:code||'未选择';
 }
 
-function externalSupplierPickerHTML(scope){
- const options=externalSupplierOptions();
+function externalSupplierPickerHTML(scope,o){
+ const options=o.options.get('externalSupplier');
  const selected=scope.ids[0];
+ const results=options.filter(({code,name})=>matchesDisplayText(`${code} ${name}`,o.query));
+ const size=10,total=Math.max(1,Math.ceil(results.length/size));
+ const items=results.slice(o.page*size,(o.page+1)*size);
  return `<div class="sub-filter external-supplier-search">
-  <input type="search" id="external-supplier-query" aria-label="搜索外部供应商" placeholder="搜索供应商名称 / 编码" value="${esc(state.permissionSupplierQuery)}">
+  <input type="search" id="external-supplier-query" aria-label="搜索外部供应商" placeholder="搜索供应商名称 / 编码" value="${esc(o.query)}">
+  ${btn('搜索','permission-supplier-search','plain')}
   ${btn('清空选择','permission-supplier-clear','text',selected?'':'disabled')}
   <span class="muted">仅可选择一个供应商</span>
  </div>
  <p class="note" role="status" data-external-supplier-selection>已选：${esc(externalSupplierLabel(selected,options))}</p>
  <div class="scope-list external-supplier-options" role="group" aria-label="外部供应商选项">
-  ${options.map(({code,name})=>`<label data-external-supplier-option>
+  ${items.map(({code,name})=>`<label>
    <input type="radio" name="externalSupplier" data-external-supplier value="${esc(code)}" ${String(code)===selected?'checked':''}>
    <span>${esc(name||'名称未提供')} <small class="muted">${esc(code)}</small></span>
-  </label>`).join('')}
-  <span class="muted" data-external-supplier-empty hidden>暂无符合条件的供应商</span>
- </div>`;
-}
-
-function filterExternalSuppliers(input){
- const query=input.value.trim().toLowerCase();
- const section=input.closest('.permission-dimension');
- const labels=$$('[data-external-supplier-option]',section);
- labels.forEach(label=>label.hidden=!label.textContent.toLowerCase().includes(query));
- $('[data-external-supplier-empty]',section).hidden=labels.some(label=>!label.hidden);
-}
-
-function selectExternalSupplier(section,code){
- const scope={mode:'custom',ids:code?[code]:[]};
- state.permissionEdit.dimensions.externalSupplier=scope;
- $('[data-external-supplier-selection]',section).textContent='已选：'+externalSupplierLabel(code);
- $('[data-act="permission-supplier-clear"]',section).disabled=!code;
- if(!code)$$('[data-external-supplier]',section).forEach(input=>input.checked=false);
+  </label>`).join('')||'<span class="muted">暂无符合条件的供应商</span>'}
+ </div>${total>1?`<div class="scope-option-pagination"><span>共 ${results.length} 项 · 第 ${o.page+1} / ${total} 页</span>
+  ${btn('上一页','permission-supplier-page','plain',`data-num="-1" ${o.page===0?'disabled':''}`)}
+  ${btn('下一页','permission-supplier-page','plain',`data-num="1" ${o.page+1>=total?'disabled':''}`)}
+ </div>`:''}`;
 }
 
 function permissionScopeText(dimension,scope){
  if(dimension.single)return externalSupplierLabel(scope.ids[0]);
  if(scope.mode==='all')return '不限（全部）';
  if(scope.mode==='none')return '无权限';
- return permissionLeaves(dimension.nodes).filter(node=>scope.ids.includes(node.id)).map(node=>node.label).join('、')||'未选择';
+ const labels=new Map(permissionLeaves(dimension.options()).map(({id,label})=>[id,label]));
+ return scope.ids.map(id=>labels.get(id)||id).join('、')||'未选择';
 }
 
-function permissionDimensionHTML(dimension,scope,inactive=false){
- const {id,name,nodes}=dimension;
- const custom=scope.mode==='custom';
- return `<section class="permission-dimension ${inactive?'permission-inactive':''}" data-permission-dimension="${id}" ${inactive?'data-inactive':''}>
-  <div class="section-title"><span>${esc(name)} ${inactive?'<span class="status info">已停用</span>':''}</span>
-   ${dimension.single?'':`<select id="scope-${id}" data-scope-mode="${id}" aria-label="${esc(name)}授权方式" ${inactive?'disabled':''}>
+function permissionDimensionHTML(dimension,entry,o){
+ const {id,name,single}=dimension,{scope}=entry;
+ const nodes=scope.mode==='custom'?o.options.get(id):null;
+ return `<section class="permission-dimension" data-permission-dimension="${id}">
+  <div class="section-title"><span>${esc(name)}</span>
+   ${single?'':`<select id="scope-${id}" data-scope-mode="${id}" aria-label="${esc(name)}授权方式">
     ${[['all','不限（全部）'],['custom','指定范围'],['none','无权限']].map(([value,label])=>`<option value="${value}" ${scope.mode===value?'selected':''}>${label}</option>`).join('')}
    </select>`}
   </div>
-  ${inactive?`<p class="note">上次设置：${esc(permissionScopeText(dimension,scope))}</p>`:
-   dimension.single?externalSupplierPickerHTML(scope):
-   custom?`<div class="permission-tools"><button type="button" class="text" data-dimension-select="${id}">全选此维度</button>
+  ${single?externalSupplierPickerHTML(scope,o):
+   nodes?`<div class="permission-tools"><button type="button" class="text" data-dimension-select="${id}">全选此维度</button>
     <button type="button" class="text" data-dimension-clear="${id}">清空此维度</button><span data-scope-count>已选 ${scope.ids.length} 项</span></div>
     <div class="permission-tree">${permissionTree(nodes,id,scope.ids)}</div>`:
    `<p class="note">${scope.mode==='all'?'允许查看该维度全部数据':'该维度未授权'}</p>`}
+  <div class="field data-permission-reason"><label for="dimension-reason">变更原因（必填）</label>
+   <textarea id="dimension-reason" maxlength="500" placeholder="说明调整此维度的原因">${esc(entry.reason)}</textarea></div>
+  <p class="error" id="data-permission-error" role="alert">${esc(entry.error||'')}</p>
+  <div class="data-permission-actions">${btn('放弃修改','data-permission-discard','text',scopeChanged(entry)?'':'disabled')}
+   ${btn('保存此维度','data-permission-preview','primary',scopeChanged(entry)?'':'disabled')}</div>
  </section>`;
 }
 
-function userPermissionEditorHTML(draft){
+function userRoleEditorHTML(draft){
  const sections=permissionDimensionGroups(draft);
  return `<div class="section-title">关联角色（可多选）</div>
   ${roleChoicesHTML(draft.roles,'name="roles" data-assignment-role')}
-  <div class="notice-review">多个角色的适用数据维度合并显示。常规维度首次配置默认不限（全部）。
-  停用的维度保留上次设置，重新适用后恢复。</div>
-  <div class="section-title">适用的数据维度</div>
-  ${sections.active.map(dim=>permissionDimensionHTML(dim,dimensionScope(draft,dim))).join('')||'<p class="note">当前所选角色没有适用的数据维度。</p>'}
-  ${sections.inactive.length?`<div class="section-title">已停用的数据维度</div>
-   ${sections.inactive.map(dim=>permissionDimensionHTML(dim,dimensionScope(draft,dim),true)).join('')}`:''}`;
+  <div class="notice-review">适用数据维度随角色调整。数据范围可在用户列表的「数据权限赋权」中逐项设置。
+  常规维度首次适用时默认不限（全部）。停用维度保留上次设置。</div>
+  <p>适用维度：${esc(sections.active.map(({name})=>name).join('、')||'无')}</p>
+  ${sections.inactive.length?`<p class="muted">已停用：${esc(sections.inactive.map(({name})=>name).join('、'))}</p>`:''}`;
+}
+
+const scopeStoragePrefix='lxj-user-scope-v1:';
+const scopeStorageKey=(user,dimension)=>scopeStoragePrefix+encodeURIComponent(user._key)+':'+dimension.id;
+
+// The mock stores the summary and grant together so a failed write cannot leave them out of sync.
+function dimensionGrant(user,dimension){
+ const stored=localStorage.getItem(scopeStorageKey(user,dimension));
+ if(stored)return JSON.parse(stored.slice(stored.indexOf('\n')+1));
+ return {version:0,scope:dimensionScope(user._permissions||{},dimension),history:[]};
+}
+
+function dimensionGrantSummary(user,dimension){
+ const stored=localStorage.getItem(scopeStorageKey(user,dimension));
+ return stored?stored.slice(0,stored.indexOf('\n')):scopeSummary(dimension,dimensionScope(user._permissions||{},dimension));
+}
+
+function scopeSummary(dimension,scope){
+ if(dimension.single)return scope.ids.length?'已选 1 家':'未选择';
+ if(scope.mode==='all')return '不限（全部）';
+ if(scope.mode==='none')return '无权限';
+ return scope.ids.length?'指定 '+scope.ids.length+' 项':'未选择';
+}
+
+function scopePayload(scope){
+ return {mode:scope.mode,ids:scope.mode==='custom'?[...new Set(scope.ids)].sort():[]};
+}
+
+function scopeChanged(entry){
+ return JSON.stringify(scopePayload(entry.scope))!==JSON.stringify(scopePayload(entry.saved.scope));
+}
+
+function openDataPermissions(user){
+ const groups=permissionDimensionGroups(userPermissionOutline(user));
+ const summaries=new Map([...groups.active,...groups.inactive].map(dimension=>[
+  dimension.id,dimensionGrantSummary(user,dimension),
+ ]));
+ state.dataPermission={userKey:user._key,groups,summaries,active:null,entries:new Map(),options:new Map(),query:'',page:0};
+ renderDataPermissions();
+}
+
+function openPermissionDimension(id){
+ const o=state.dataPermission;
+ const dimension=o.groups.active.find(dim=>dim.id===id);
+ if(!dimension||id===o.active?.id)return;
+ o.active=dimension;
+ if(!o.entries.has(id)){
+  const saved=dimensionGrant(row(),dimension);
+  o.entries.set(id,{saved,scope:structuredClone(saved.scope),reason:''});
+ }
+ o.query='';o.page=0;
+ if(dimension.single||o.entries.get(id).scope.mode==='custom')loadPermissionOptions(dimension,o);
+ renderDataPermissions();
+}
+
+function loadPermissionOptions(dimension,o){
+ if(!o.options.has(dimension.id))o.options.set(dimension.id,dimension.single?externalSupplierOptions():dimension.options());
+}
+
+function dataPermissionEntry(o=state.dataPermission){
+ return o.entries.get(o.active?.id);
+}
+
+function renderDataPermissions(focusId){
+ const o=state.dataPermission,entry=dataPermissionEntry(o);
+ const body=$('#data-permission-editor')?.closest('.overlay-body');
+ const scroll=body?.scrollTop||0;
+ const dimHTML=(dimension,inactive=false)=>{
+  const {id,name}=dimension,draft=o.entries.get(id);
+  const summary=o.summaries.get(id);
+  return `<button type="button" class="data-permission-tab ${id===o.active?.id?'active':''}" data-act="data-permission-select"
+   data-dimension="${id}" aria-pressed="${id===o.active?.id}" ${inactive?'disabled data-inactive':''}>
+   <span>${esc(name)}</span><small class="muted">${inactive?'已停用 · ':''}${esc(summary)}${draft&&scopeChanged(draft)?' · 待保存':''}</small></button>`;
+ };
+ const dirty=[...o.entries.values()].some(scopeChanged);
+ openOverlay('数据权限赋权',`<div id="data-permission-editor">
+  <div class="data-permission-user"><strong>${esc(row()['姓名'])}</strong><span class="muted">${esc(userRoleLabels(row()).join('、'))}</span></div>
+  <p class="note">选择要配置的维度。每次保存只更新当前维度。</p>
+  <div class="data-permission-layout">
+   <nav aria-label="数据权限维度" class="data-permission-nav">
+    ${o.groups.active.map(dim=>dimHTML(dim)).join('')||'<p class="muted">当前角色没有适用的数据维度</p>'}
+    ${o.groups.inactive.length?`<p class="data-permission-inactive-title muted">已停用 · 保留上次设置</p>
+     ${o.groups.inactive.map(dim=>dimHTML(dim,true)).join('')}`:''}
+   </nav>
+   ${entry?permissionDimensionHTML(o.active,entry,o):'<div class="data-permission-empty">请选择要配置的数据维度</div>'}
+  </div></div>`,btn(dirty?'关闭并放弃未保存修改':'关闭','close-overlay','plain'),'drawer','data-permissions');
+ if(body)$('#data-permission-editor').closest('.overlay-body').scrollTop=scroll;
+ if(focusId)document.getElementById(focusId)?.focus({preventScroll:true});
+ syncPermissionMixed();
+}
+
+function reviewDataPermission(){
+ const o=state.dataPermission,entry=dataPermissionEntry(o),dimension=o.active;
+ if(!entry||!scopeChanged(entry))return;
+ const reason=entry.reason.trim(),scope=scopePayload(entry.scope);
+ const error=$('#data-permission-error');
+ if(!reason){error.textContent='请填写变更原因';$('#dimension-reason').focus();return;}
+ if(scope.mode==='custom'&&!scope.ids.length&&!dimension.single){
+  error.textContent='请选择至少一项，或切换至无权限';return;
+ }
+ openOverlay('确认保存数据权限',`<p>${esc(row()['姓名'])} · ${esc(dimension.name)}</p>
+  <p>调整前：${esc(permissionScopeText(dimension,entry.saved.scope))}</p>
+  <p>调整后：${esc(permissionScopeText(dimension,scope))}</p>
+  <p>原因：${esc(reason)}</p><p id="data-permission-save-error" class="error" role="alert"></p>`,
+  btn('返回调整','data-permission-back','plain')+btn('确认保存','data-permission-save','primary'),'dialog','data-permission-confirm');
+}
+
+function saveDataPermission(){
+ const o=state.dataPermission,dimension=o.active,entry=dataPermissionEntry(o);
+ const user=row(),error=$('#data-permission-save-error');
+ try{
+  const store=JSON.parse(localStorage.getItem('lxj-prototype-v1')||'{}');
+  const latest=store.user?store.user.find(record=>record._key===o.userKey):user;
+  const roles=store.role||permissionRoles();
+  if(user._key!==o.userKey||!latest||!activePermissionDimensions(userRoleIds(latest,roles),roles).includes(dimension.id)){
+   error.textContent='角色或用户状态已变化，请刷新页面后重新配置。';return;
+  }
+  const current=dimensionGrant(latest,dimension);
+  if(current.version!==entry.saved.version||JSON.stringify(current.scope)!==JSON.stringify(entry.saved.scope)){
+   entry.error='此维度已有更新。请放弃本次修改并重新读取。';
+   error.textContent=entry.error;return;
+  }
+  const scope=scopePayload(entry.scope);
+  const history={...permissionHistoryEntry(entry.reason.trim(),current.scope,scope),dimension:dimension.id};
+  const saved={version:current.version+1,scope,history:[...current.history,history]};
+  const summary=scopeSummary(dimension,scope);
+  localStorage.setItem(scopeStorageKey(user,dimension),summary+'\n'+JSON.stringify(saved));
+  o.entries.set(dimension.id,{saved,scope:structuredClone(scope),reason:''});
+  o.summaries.set(dimension.id,summary);
+ }catch{
+  error.textContent='保存失败。当前维度尚未更新，可重试。';return;
+ }
+ renderDataPermissions();
+ toast(dimension.name+'权限已保存');
 }
 
 function permissions(p){
- state.permissionEdit=p.id==='role'?{menuGrants:roleMenuGrants(row())}:userPermissionDraft(row());
+ const isRole=p.id==='role';
+ state.permissionEdit=isRole?{menuGrants:roleMenuGrants(row())}:userPermissionOutline(row());
  state.permissionReason='';
- state.permissionSupplierQuery='';
  state.permissionDraft=null;
  const grants=state.permissionEdit.menuGrants||{};
  state.permissionGroups=new Set(groups.filter(group=>permissionMenus().some(p=>p.group===group&&Object.hasOwn(grants,p.id))));
@@ -337,9 +467,9 @@ function renderPermissionEditor(){
  const draft=state.permissionEdit;
  const isRole=page().id==='role';
  if(isRole&&root)state.permissionGroups=new Set($$('[data-permission-group][open]',root).map(el=>el.dataset.permissionGroup));
- openOverlay(isRole?'配置角色权限':'分配角色 / 多维数据范围',`<div id="permission-editor">
+ openOverlay(isRole?'配置角色权限':'分配角色',`<div id="permission-editor">
   <p>当前${isRole?'角色':'用户'}：${esc(row()[isRole?'角色名称':'姓名'])}</p>
-  ${isRole?roleMenuEditorHTML(draft.menuGrants,state.permissionGroups):userPermissionEditorHTML(draft)}
+  ${isRole?roleMenuEditorHTML(draft.menuGrants,state.permissionGroups):userRoleEditorHTML(draft)}
   <div class="field"><label for="change-reason">变更原因（必填）</label>
    <textarea id="change-reason" maxlength="500">${esc(state.permissionReason)}</textarea></div>
   <p id="permission-error" class="error" role="alert"></p></div>`,
@@ -349,15 +479,12 @@ function renderPermissionEditor(){
   if(focus.id)document.getElementById(focus.id)?.focus({preventScroll:true});
   if(focus.matches('[data-assignment-role]'))$$('[data-assignment-role]').find(el=>el.value===focus.value)?.focus({preventScroll:true});
  }
- const supplierQuery=$('#external-supplier-query');
- if(supplierQuery)filterExternalSuppliers(supplierQuery);
- syncPermissionMixed();
 }
 
 function syncPermissionMixed(){
  $$('[data-scope-group]').forEach(el=>{
   const ids=JSON.parse(el.dataset.leafIds);
-  const selected=state.permissionEdit.dimensions?.[el.dataset.scopeGroup]?.ids||[];
+  const selected=dataPermissionEntry()?.scope.ids||[];
   el.checked=ids.every(id=>selected.includes(id));
   el.indeterminate=!el.checked&&ids.some(id=>selected.includes(id));
  });
@@ -366,9 +493,17 @@ function syncPermissionMixed(){
 function updateScopeSelection(id,ids){
  const section=$(`[data-permission-dimension="${id}"]:not([data-inactive])`);
  if(!section)return;
- state.permissionEdit.dimensions[id].ids=ids;
+ const entry=dataPermissionEntry();
+ entry.scope.ids=ids;
  $$('[data-scope-leaf]',section).forEach(el=>el.checked=ids.includes(el.value));
  $('[data-scope-count]',section).textContent='已选 '+ids.length+' 项';
+ const dirty=scopeChanged(entry);
+ $('[data-act="data-permission-discard"]',section).disabled=!dirty;
+ $('[data-act="data-permission-preview"]',section).disabled=!dirty;
+ const otherDrafts=[...state.dataPermission.entries.values()].some(scopeChanged);
+ $('.overlay-footer [data-act="close-overlay"]').textContent=otherDrafts?'关闭并放弃未保存修改':'关闭';
+ const tab=$(`[data-dimension="${id}"] small`);
+ tab.textContent=state.dataPermission.summaries.get(id)+(dirty?' · 待保存':'');
  syncPermissionMixed();
 }
 
@@ -410,12 +545,11 @@ function reviewPermissions(){
    <strong>${esc(menu.name)}</strong><div>变更前：${esc(menuGrantText(before[menu.id]))}</div>
    <div>变更后：${esc(menuGrantText(draft.menuGrants[menu.id]))}</div></li>`).join('')}</ul>`:'<p>菜单和操作权限无变化。</p>'}`;
  }else{
-  const invalid=permissionDimensionGroups(draft).active.find(dim=>!dim.single&&draft.dimensions[dim.id]?.mode==='custom'&&!draft.dimensions[dim.id].ids.length);
-  if(invalid){error.textContent='请为「'+invalid.name+'」选择数据，或调整授权方式';return;}
-  const before=userPermissionDraft(record);
+  const before=userPermissionOutline(record);
+  const nextDimensions=permissionDimensionGroups(draft).active.map(dim=>dim.name);
   preview=`<p>原角色：${esc(userRoleNames(before.roles).join('、')||'未分配')}</p>
    <p>新角色：${esc(userRoleNames(draft.roles).join('、')||'未分配')}</p>
-   <p>原范围：${esc(permissionScopeSummary(before))}</p><p>新范围：${esc(permissionScopeSummary(draft))}</p>`;
+   <p>适用维度：${esc(nextDimensions.join('、')||'无')}</p>`;
  }
  if(isRole)state.permissionGroups=new Set($$('[data-permission-group][open]').map(el=>el.dataset.permissionGroup));
  state.permissionDraft={...draft,reason};
@@ -431,9 +565,11 @@ function savePermissions(){
  const draft=state.permissionDraft;
  if(!draft)return;
  const p=page(),r=row(),isRole=p.id==='role';
- const before=isRole?{menuGrants:roleMenuGrants(r)}:permissionSnapshot(userPermissionDraft(r));
- const after=isRole?draft:permissionSnapshot(draft);
- const next={...r,_permissions:draft,_permissionHistory:[...(r._permissionHistory||[]),permissionHistoryEntry(draft.reason,before,after)]};
+ const before=isRole?{menuGrants:roleMenuGrants(r)}:userPermissionOutline(r);
+ const entry=permissionHistoryEntry(draft.reason,before,draft);
+ if(!isRole)entry.kind='roles';
+ const next={...r,_permissions:isRole?draft:{...r._permissions,...draft},
+  _permissionHistory:[...(r._permissionHistory||[]),entry]};
  delete next['数据范围'];
  if(!isRole)next['角色']=userRoleNames(draft.roles).join('、')||'未分配';
  const retainedUsers=isRole?retainUserDimensionsForRole(r):null;
@@ -448,13 +584,13 @@ function savePermissions(){
 }
 
 function userDetailHTML(p,r){
- const draft=userPermissionDraft(r);
+ const draft=userPermissionOutline(r);
  const sections=permissionDimensionGroups(draft);
  const scopeItems=[...sections.active,...sections.inactive];
  const inactive=new Set(sections.inactive.map(dim=>dim.id));
  const scopes=scopeItems.length?`<div class="info-grid">${scopeItems.map(dim=>`<div class="info-item ${inactive.has(dim.id)?'permission-inactive':''}">
   <label>${esc(dim.name)}${inactive.has(dim.id)?'（已停用）':''}</label>
-  <div class="value">${esc(permissionScopeText(dim,dimensionScope(draft,dim)))}</div></div>`).join('')}</div>`
+  <div class="value">${esc(dimensionGrantSummary(r,dim))}</div></div>`).join('')}</div>`
   :'<p class="note">当前关联角色没有适用的数据维度。</p>';
  return panel('用户信息',infoHTML(p.columns,r))+panel('多维数据范围',scopes);
 }
@@ -474,10 +610,19 @@ function permissionHistoryText(saved,isUser){
 
 function showPermissionHistory(){
  const isUser=page().id==='user';
- openOverlay('授权变更记录',(row()._permissionHistory||[]).slice().reverse().map(entry=>`<section class="survey-question">
-  <strong>${esc(entry.time)} · ${esc(entry.operator)}</strong><p>${esc(entry.reason)}</p>
-  <p>变更前：${esc(permissionHistoryText(entry.before,isUser))}</p>
-  <p>变更后：${esc(permissionHistoryText(entry.after,isUser))}</p></section>`).join('')||'<div class="empty">暂无授权变更记录</div>',
+ const user=row(),dimensions=isUser?permissionCatalog():[];
+ const byId=new Map(dimensions.map(dimension=>[dimension.id,dimension]));
+ const entries=[...(user._permissionHistory||[]),...dimensions.flatMap(dimension=>dimensionGrant(user,dimension).history)]
+  .reverse().sort((a,b)=>b.time.localeCompare(a.time,'zh-CN',{numeric:true}));
+ openOverlay('授权变更记录',entries.map(entry=>{
+  const dimension=byId.get(entry.dimension);
+  const format=saved=>dimension?permissionScopeText(dimension,saved):
+   entry.kind==='roles'?userRoleNames(saved.roles).join('、')||'未分配':permissionHistoryText(saved,isUser);
+  return `<section class="survey-question"><strong>${esc(entry.time)} · ${esc(entry.operator)}</strong>
+   ${dimension||entry.kind==='roles'?` <span class="status">${esc(dimension?.name||'角色分配')}</span>`:''}
+   <p>${esc(entry.reason)}</p><p>变更前：${esc(format(entry.before))}</p>
+   <p>变更后：${esc(format(entry.after))}</p></section>`;
+ }).join('')||'<div class="empty">暂无授权变更记录</div>',
   btn('关闭','close-overlay','plain'),'drawer');
 }
 
@@ -500,19 +645,29 @@ document.addEventListener('change',e=>{
   draft.roles=$$('[data-assignment-role]:checked',root).map(el=>el.value);
   rememberActiveDimensions(draft);
   renderPermissionEditor();
- }else if(input.matches('[data-external-supplier]')&&input.checked){
-  selectExternalSupplier(input.closest('.permission-dimension'),input.value);
+ }
+});
+
+document.addEventListener('change',e=>{
+ const input=e.target;
+ if(input.disabled||!input.closest('#data-permission-editor'))return;
+ const o=state.dataPermission,entry=dataPermissionEntry(o);
+ if(!entry)return;
+ const id=o.active.id;
+ if(input.matches('[data-external-supplier]')&&input.checked){
+  entry.scope.ids=[input.value];
+  renderDataPermissions();
  }else if(input.matches('[data-scope-mode]')){
-  const id=input.dataset.scopeMode;
-  draft.dimensions[id]={mode:input.value,ids:draft.dimensions[id]?.ids||[]};
-  renderPermissionEditor();
+  entry.scope.mode=input.value;
+  if(input.value==='custom')loadPermissionOptions(o.active,o);
+  renderDataPermissions(input.id);
  }else if(input.matches('[data-scope-leaf]')){
-  const id=input.dataset.scopeLeaf;
-  const ids=$$(`[data-scope-leaf="${id}"]:checked`,root).map(el=>el.value);
-  updateScopeSelection(id,ids);
+  const ids=new Set(entry.scope.ids);
+  if(input.checked)ids.add(input.value);
+  else ids.delete(input.value);
+  updateScopeSelection(id,[...ids]);
  }else if(input.matches('[data-scope-group]')){
-  const id=input.dataset.scopeGroup;
-  const ids=new Set(draft.dimensions[id].ids);
+  const ids=new Set(entry.scope.ids);
   for(const leaf of JSON.parse(input.dataset.leafIds)){
    if(input.checked)ids.add(leaf);
    else ids.delete(leaf);
@@ -522,23 +677,48 @@ document.addEventListener('change',e=>{
 });
 
 document.addEventListener('input',e=>{
- const input=e.target;
- if(!input.matches('#external-supplier-query'))return;
- state.permissionSupplierQuery=input.value;
- filterExternalSuppliers(input);
+ if(e.target.id==='dimension-reason')dataPermissionEntry().reason=e.target.value;
+});
+
+document.addEventListener('keydown',e=>{
+ if(e.key==='Enter'&&e.target.id==='external-supplier-query'){
+  e.preventDefault();
+  $('[data-act="permission-supplier-search"]').click();
+ }
 });
 
 document.addEventListener('click',e=>{
- const control=e.target.closest('[data-dimension-select],[data-dimension-clear],[data-act="permissions-back"],[data-act="permission-supplier-clear"]');
- if(!control)return;
- if(control.dataset.act==='permissions-back'){renderPermissionEditor();return;}
- if(control.dataset.act==='permission-supplier-clear'){
-  selectExternalSupplier(control.closest('.permission-dimension'),'');
-  return;
+ const control=e.target.closest('button');
+ if(!control||control.disabled)return;
+ const action=control.dataset.act;
+ if(action==='permissions-back'){renderPermissionEditor();return;}
+ if(action==='data-permission-back'){renderDataPermissions('dimension-reason');return;}
+ if(action==='data-permission-save'&&state.overlay?.task==='data-permission-confirm'){saveDataPermission();return;}
+ if(!control.closest('#data-permission-editor'))return;
+ if(action==='data-permission-select'){openPermissionDimension(control.dataset.dimension);return;}
+ if(action==='data-permission-preview'){reviewDataPermission();return;}
+ const o=state.dataPermission,dimension=o.active,entry=dataPermissionEntry(o);
+ if(!entry)return;
+ if(action==='data-permission-discard'){
+  const saved=dimensionGrant(row(),dimension);
+  o.entries.set(dimension.id,{saved,scope:structuredClone(saved.scope),reason:''});
+  o.summaries.set(dimension.id,scopeSummary(dimension,saved.scope));
+  if(saved.scope.mode==='custom')loadPermissionOptions(dimension,o);
+  renderDataPermissions();
+ }else if(action==='permission-supplier-search'){
+  o.query=$('#external-supplier-query').value.trim();
+  o.page=0;
+  renderDataPermissions('external-supplier-query');
+ }else if(action==='permission-supplier-page'){
+  o.page+=Number(control.dataset.num);
+  renderDataPermissions();
+ }else if(action==='permission-supplier-clear'){
+  entry.scope.ids=[];
+  renderDataPermissions();
+ }else if(control.hasAttribute('data-dimension-select')||control.hasAttribute('data-dimension-clear')){
+  const ids=control.hasAttribute('data-dimension-select')?permissionLeaves(o.options.get(dimension.id)).map(node=>node.id):[];
+  updateScopeSelection(dimension.id,ids);
  }
- const id=control.dataset.dimensionSelect||control.dataset.dimensionClear;
- const dimension=permissionCatalog().find(dim=>dim.id===id);
- updateScopeSelection(id,control.dataset.dimensionSelect?permissionLeaves(dimension.nodes).map(node=>node.id):[]);
 });
 
 document.addEventListener('change',e=>{const el=e.target;if(el.matches('[data-survey="enabled"]')){readSurvey();openSurvey(false)}if(el.matches('[data-answer-question]')){const i=Number(el.dataset.answerQuestion),q=state.surveyDraft.questions[i],inputs=$$(`[name="q${i}"]:checked`);const follow=$(`[data-followup="${i}"]`),other=$(`[data-other="${i}"]`);if(follow)follow.hidden=!inputs.some(x=>Number(x.value)===q.followupOption);if(other)other.hidden=!inputs.some(x=>Number(x.value)===q.options.length-1);}});
